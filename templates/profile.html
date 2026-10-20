@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}个人设置 - 专注小窝{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='insights-pages.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="profile-page" aria-labelledby="profileTitle">
+  <header class="profile-page-head">
+    <div>
+      <span class="section-label">偏好与记录</span>
+      <h1 id="profileTitle">个人设置</h1>
+      <p>设置默认时长和提醒方式，也可以查看或导出记录。</p>
+    </div>
+  </header>
+
+  <div class="profile-grid">
+    <section class="profile-card" aria-labelledby="preferenceTitle">
+      <span class="stage-label">默认设置</span>
+      <h2 id="preferenceTitle" class="card-title">常用的开始方式</h2>
+      <p class="profile-card-intro">这些设置只会预填首页，每次开始前仍可修改。</p>
+
+      <label for="default_duration">
+        <span>默认计划时长（分钟）</span>
+        <input type="number" id="default_duration" value="25" min="1" max="180" inputmode="numeric">
+        <small class="field-note">首页会预填这个数值，采用建议时长后也可以再次调整。</small>
+      </label>
+
+      <label for="default_monitoring">
+        <span>默认提醒方式</span>
+        <select id="default_monitoring">
+          <option value="low">低：过程不提醒，只在报告中记录</option>
+          <option value="medium" selected>中：持续偏离后温和提醒</option>
+          <option value="high">高：明确偏离时及时提醒</option>
+        </select>
+      </label>
+
+      <label for="sound_alert">
+        <span>提醒声音</span>
+        <select id="sound_alert">
+          <option value="enabled" selected>播放声音</option>
+          <option value="disabled">保持静音</option>
+        </select>
+      </label>
+
+      <button id="saveSettingsButton" class="button-primary" type="button">保存偏好</button>
+    </section>
+
+    <section class="profile-card" aria-labelledby="statsTitle">
+      <span class="stage-label">记录概览</span>
+      <h2 id="statsTitle" class="card-title">当前账号的数据</h2>
+      <p id="profileStatsStatus" class="profile-load-status" role="status">正在读取专注记录…</p>
+      <div id="profileStats" class="mini-metrics profile-metrics" aria-busy="true">
+        <div><span>累计记录时长</span><strong id="total-duration">--</strong></div>
+        <div><span>已保存会话</span><strong id="total-sessions">--</strong></div>
+        <div><span>数据较完整记录的平均相关度</span><strong id="avg-focus-score">--</strong></div>
+        <div><span>当前积分</span><strong id="total-points">{{ user_data.total_points | default(0) }}</strong></div>
+      </div>
+      <div class="week-summary">
+        <h4>最近 7 天</h4>
+        <p><span id="week-duration">--</span> · <span id="week-sessions">--</span></p>
+      </div>
+      <button id="exportDataButton" class="button-secondary" type="button">导出 JSON 记录</button>
+      <p class="field-note">导出文件包含当前接口返回的专注历史，方便你自行备份或检查。</p>
+    </section>
+  </div>
+  <div class="profile-account-actions">
+    <a href="/logout" class="button button-secondary">退出当前账号</a>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const settings = window.getFocusSettings ? window.getFocusSettings() : {};
+    if (settings.default_duration) document.getElementById('default_duration').value = settings.default_duration;
+    if (settings.default_monitoring) document.getElementById('default_monitoring').value = settings.default_monitoring;
+    if (settings.sound_alert) document.getElementById('sound_alert').value = settings.sound_alert;
+
+    document.getElementById('saveSettingsButton').addEventListener('click', () => {
+      const duration = Number(document.getElementById('default_duration').value);
+      if (!Number.isFinite(duration) || duration < 1 || duration > 180) {
+        window.setMessage('error', '默认时长应在 1 到 180 分钟之间。');
+        return;
+      }
+      localStorage.setItem('focus_settings', JSON.stringify({
+        default_duration: duration,
+        default_monitoring: document.getElementById('default_monitoring').value,
+        sound_alert: document.getElementById('sound_alert').value,
+      }));
+      window.setMessage('success', '偏好已保存，下次打开开始页时生效。');
+    });
+
+    let historyPayload = null;
+    let historyLoadPromise = null;
+
+    const fetchHistory = () => {
+      if (historyPayload) return Promise.resolve(historyPayload);
+      if (historyLoadPromise) return historyLoadPromise;
+
+      historyLoadPromise = (async () => {
+        const response = await fetch('/api/history/all');
+        if (!response.ok) throw new Error('读取记录失败');
+        const payload = await response.json();
+        if (!payload || !Array.isArray(payload.items)) throw new Error('记录格式无效');
+        historyPayload = payload;
+        const items = Array.isArray(historyPayload.items) ? historyPayload.items : [];
+        const totalDuration = items.reduce((sum, item) => sum + Number(item.actual_duration || 0), 0);
+        const scores = items
+          .filter(item => {
+            return item.score_version === 'multidim-v1' && item.score_reliable === true;
+          })
+          .map(item => Number(item.completion_score))
+          .filter(Number.isFinite);
+        const average = scores.length ? Math.round(scores.reduce((sum, value) => sum + value, 0) / scores.length) : null;
+        document.getElementById('total-duration').textContent = `${Math.round(totalDuration)} 分钟`;
+        document.getElementById('total-sessions').textContent = `${items.length} 次`;
+        document.getElementById('avg-focus-score').textContent = average == null ? '--' : `${average} 分`;
+
+        const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        const recent = items.filter(item => Number(item.end_time || 0) * 1000 >= weekAgo);
+        const recentDuration = recent.reduce((sum, item) => sum + Number(item.actual_duration || 0), 0);
+        document.getElementById('week-duration').textContent = `${Math.round(recentDuration)} 分钟`;
+        document.getElementById('week-sessions').textContent = `${recent.length} 次`;
+        document.getElementById('profileStats').setAttribute('aria-busy', 'false');
+        document.getElementById('profileStatsStatus').textContent = '记录已更新。';
+        return historyPayload;
+      })().finally(() => {
+        historyLoadPromise = null;
+      });
+      return historyLoadPromise;
+    };
+
+    const loadHistory = async () => {
+      try {
+        await fetchHistory();
+      } catch (error) {
+        console.warn('加载个人统计失败', error);
+        document.getElementById('profileStats').setAttribute('aria-busy', 'false');
+        document.getElementById('profileStatsStatus').textContent = '暂时无法读取专注记录，偏好仍可正常保存。';
+        document.getElementById('profileStatsStatus').classList.add('is-error');
+      }
+    };
+
+    document.getElementById('exportDataButton').addEventListener('click', async () => {
+      const button = document.getElementById('exportDataButton');
+      button.disabled = true;
+      button.setAttribute('aria-busy', 'true');
+      const originalText = button.textContent;
+      button.textContent = '正在准备记录…';
+      try {
+        const payload = await fetchHistory();
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `focus_data_${new Date().toISOString().slice(0, 10)}.json`;
+        link.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 0);
+        window.setMessage('success', 'JSON 记录已导出。');
+      } catch (error) {
+        console.warn('导出个人记录失败', error);
+        window.setMessage('error', '暂时无法导出记录，请稍后再试。');
+      } finally {
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
+        button.textContent = originalText;
+      }
+    });
+
+    void loadHistory();
+  });
+</script>
+{% endblock %}

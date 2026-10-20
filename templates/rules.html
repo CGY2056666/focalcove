@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}使用前须知 - 专注小窝{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='insights-pages.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="rules-page" aria-labelledby="rulesTitle">
+  <header class="rules-page-head">
+    <span class="section-label">使用前须知</span>
+    <h1 id="rulesTitle">开始前，记住这四件事</h1>
+    <p>这是屏幕画面辅助工具，不会读取你的想法，也不能代替你判断自己是否专注。</p>
+  </header>
+
+  <div class="rules-brief-grid">
+    <article>
+      <span aria-hidden="true">01</span>
+      <h2>写清本轮目标</h2>
+      <p>目标越具体，画面判断越容易解释。提前结束会如实记录实际时长。</p>
+    </article>
+    <article>
+      <span aria-hidden="true">02</span>
+      <h2>只共享需要的范围</h2>
+      <p>共享由你在浏览器中确认。请避开聊天、账号、密钥和其他敏感内容。</p>
+    </article>
+    <article>
+      <span aria-hidden="true">03</span>
+      <h2>结果只作参考</h2>
+      <p>模型判断的是画面与目标的关系；无法判断或本次没有结果都不会自动算作偏离。</p>
+    </article>
+    <article>
+      <span aria-hidden="true">04</span>
+      <h2>积分只是原型反馈</h2>
+      <p>当前积分只可兑换虚拟小窝装扮，不是现金、资产或真实奖品权益。</p>
+    </article>
+  </div>
+
+  <aside class="rules-more" aria-label="完整说明入口">
+    <div>
+      <h2>想了解评分、隐私和原型边界？</h2>
+      <p>完整手册保留操作步骤、三档提醒、评分方法、数据边界和开发者备注。</p>
+    </div>
+    <a href="/about" class="button button-secondary">查看完整使用手册</a>
+  </aside>
+
+  <div class="rules-actions">
+    <a href="/" class="button button-primary">我知道了，开始专注</a>
+  </div>
+</section>
+{% endblock %}

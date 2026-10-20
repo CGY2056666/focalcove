@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+{% from "_decor_icons.html" import decor_icon %}
+{% block title %}装扮商店 - 专注小窝{% endblock %}
+
+{% block content %}
+{% set next_item = namespace(price=none, name='') %}
+{% for item in shop_items %}
+  {% if item.type == 'furniture' and item.id not in user_data.unlocked_items %}
+    {% if next_item.price is none or item.price < next_item.price %}
+      {% set next_item.price = item.price %}
+      {% set next_item.name = item.name %}
+    {% endif %}
+  {% endif %}
+{% endfor %}
+
+<section class="panel shop-shell">
+  <div class="panel-head">
+    <div class="shop-intro">
+      <span class="section-label">装扮商店</span>
+      <h1>挑一件喜欢的装扮</h1>
+      <p>兑换后，就可以回到“我的小窝”摆放。</p>
+    </div>
+    <div class="panel-pulse">
+      <span>当前积分</span>
+      <strong id="currentPoints">{{ user_data.total_points }} 分</strong>
+      <small>可用于兑换装扮</small>
+    </div>
+  </div>
+
+  <div class="shop-next-progress" id="shopNextProgress">
+    <div>
+      <span class="shop-next-label">下一件装扮</span>
+      <strong id="shopProgressText" aria-live="polite">
+        {% if next_item.price is none %}装扮已经全部收集
+        {% elif user_data.total_points >= next_item.price %}现在可以兑换“{{ next_item.name }}”
+        {% else %}距离“{{ next_item.name }}”还差 {{ next_item.price - user_data.total_points }} 分
+        {% endif %}
+      </strong>
+    </div>
+    <progress
+      id="shopProgressBar"
+      max="{{ next_item.price or 1 }}"
+      value="{% if next_item.price %}{{ [user_data.total_points, next_item.price] | min }}{% else %}1{% endif %}"
+      aria-label="下一件装扮兑换进度"
+    ></progress>
+  </div>
+
+  <div class="shop-grid" id="furnitureShopGrid">
+    {% for item in shop_items %}
+      {% if item.type == 'furniture' %}
+      {% set is_owned = item.id in user_data.unlocked_items %}
+      <article
+        class="shop-item-card{% if is_owned %} unlocked{% endif %}"
+        data-item-id="{{ item.id }}"
+        data-price="{{ item.price }}"
+        data-owned="{{ 'true' if is_owned else 'false' }}"
+        data-thumbnail-scale="{{ item.thumbnail_scale }}"
+      >
+        <div class="item-icon" aria-hidden="true">
+          {{ decor_icon(item.id, 'decor-thumbnail') }}
+        </div>
+        <div class="shop-card-title">
+          <h2>{{ item.name }}</h2>
+          <span class="owned-badge" data-owned-badge{% if not is_owned %} hidden{% endif %}>已拥有</span>
+        </div>
+        <p class="item-description">{{ item.desc }}</p>
+        <div class="item-price">
+          <span>所需积分</span>
+          <strong>{{ item.price }} 分</strong>
+        </div>
+        <p class="shop-points-gap" data-points-gap>
+          {% if not is_owned and user_data.total_points < item.price %}还差 {{ item.price - user_data.total_points }} 分{% endif %}
+        </p>
+        <button
+          class="button-primary exchange-btn"
+          type="button"
+          data-item-id="{{ item.id }}"
+          data-price="{{ item.price }}"
+          {% if is_owned %}hidden{% elif user_data.total_points < item.price %}disabled{% endif %}
+        >{% if user_data.total_points >= item.price %}兑换装扮{% else %}积分不足{% endif %}</button>
+      </article>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+
+<section class="panel secondary-panel shop-shell reward-preview-shell" aria-labelledby="rewardPreviewTitle">
+  <div class="panel-head reward-preview-head">
+    <div class="shop-intro">
+      <span class="section-label">奖励陈列架</span>
+      <h2 id="rewardPreviewTitle">更多奖励预览</h2>
+      <p>会员、饮品、书券和优惠券都保留在这里，目前只作展示。</p>
+    </div>
+    <span class="preview-only-badge">暂未开放</span>
+  </div>
+
+  <div class="reward-rail-controls" aria-label="浏览奖励">
+    <p class="reward-scroll-hint">左右滑动或使用方向键查看更多</p>
+    <div>
+      <button class="reward-track-button" id="rewardPrevious" type="button" aria-label="查看前一组奖励">←</button>
+      <button class="reward-track-button" id="rewardNext" type="button" aria-label="查看后一组奖励">→</button>
+    </div>
+  </div>
+
+  <div
+    class="reward-preview-grid"
+    id="rewardPreviewTrack"
+    tabindex="0"
+    role="region"
+    aria-label="奖励预览列表，可横向滚动"
+  >
+    {% for item in shop_items %}
+      {% if item.type == 'utility' %}
+      <article
+        class="shop-item-card reward-preview-card"
+        data-item-id="{{ item.id }}"
+        data-thumbnail-scale="{{ item.thumbnail_scale }}"
+      >
+        <div class="item-icon" aria-hidden="true">
+          {{ decor_icon(item.id, 'decor-thumbnail') }}
+        </div>
+        <h3>{{ item.name }}</h3>
+        <p class="item-description">{{ item.desc }}</p>
+        <div class="item-price preview-price">
+          <span>预览积分</span>
+          <strong>{{ item.price }} 分</strong>
+        </div>
+      </article>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+
+<details class="panel secondary-panel shop-shell shop-points-help">
+  <summary>积分和奖励说明</summary>
+  <div class="shop-note">
+    <div><strong>完成一轮再结算</strong><p>记录保存且数据较完整后，积分才会进入账号。</p></div>
+    <div><strong>装扮只兑换一次</strong><p>已拥有的装扮不会重复扣分，可以随时重新搭配。</p></div>
+    <div><strong>预览奖品暂不兑换</strong><p>会员、优惠券和饮品奖励目前不会扣除积分。</p></div>
+  </div>
+  <div class="hero-actions">
+    <a href="/den" class="button button-secondary">查看我的小窝</a>
+  </div>
+</details>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const pointsElement = document.getElementById('currentPoints');
+    const progressText = document.getElementById('shopProgressText');
+    const progressBar = document.getElementById('shopProgressBar');
+    const furnitureGrid = document.getElementById('furnitureShopGrid');
+    const cards = Array.from(furnitureGrid.querySelectorAll('.shop-item-card'));
+    let currentPoints = {{ user_data.total_points | int }};
+
+    document.querySelectorAll('[data-thumbnail-scale]').forEach(element => {
+      const scale = Number(element.dataset.thumbnailScale);
+      if (Number.isFinite(scale)) element.style.setProperty('--thumbnail-scale', String(scale));
+    });
+
+    const sortCards = () => {
+      cards.sort((left, right) => {
+        const leftOwned = left.dataset.owned === 'true';
+        const rightOwned = right.dataset.owned === 'true';
+        const leftPrice = Number(left.dataset.price);
+        const rightPrice = Number(right.dataset.price);
+        const leftGroup = leftOwned ? 2 : leftPrice <= currentPoints ? 0 : 1;
+        const rightGroup = rightOwned ? 2 : rightPrice <= currentPoints ? 0 : 1;
+        if (leftGroup !== rightGroup) return leftGroup - rightGroup;
+        const leftGap = Math.max(0, leftPrice - currentPoints);
+        const rightGap = Math.max(0, rightPrice - currentPoints);
+        return leftGap - rightGap || leftPrice - rightPrice;
+      });
+      cards.forEach(card => furnitureGrid.appendChild(card));
+    };
+
+    const renderShop = () => {
+      pointsElement.textContent = `${currentPoints} 分`;
+      cards.forEach(card => {
+        const owned = card.dataset.owned === 'true';
+        const price = Number(card.dataset.price);
+        const gap = card.querySelector('[data-points-gap]');
+        const badge = card.querySelector('[data-owned-badge]');
+        const button = card.querySelector('.exchange-btn');
+        card.classList.toggle('unlocked', owned);
+        badge.hidden = !owned;
+        gap.textContent = !owned && price > currentPoints ? `还差 ${price - currentPoints} 分` : '';
+        button.hidden = owned;
+        if (!owned && !button.getAttribute('aria-busy')) {
+          button.disabled = price > currentPoints;
+          button.textContent = price > currentPoints ? '积分不足' : '兑换装扮';
+        }
+      });
+
+      const remaining = cards
+        .filter(card => card.dataset.owned !== 'true')
+        .sort((left, right) => Number(left.dataset.price) - Number(right.dataset.price));
+      if (!remaining.length) {
+        progressText.textContent = '装扮已经全部收集';
+        progressBar.max = 1;
+        progressBar.value = 1;
+      } else {
+        const next = remaining[0];
+        const price = Number(next.dataset.price);
+        const name = next.querySelector('h2').textContent.trim();
+        progressText.textContent = currentPoints >= price
+          ? `现在可以兑换“${name}”`
+          : `距离“${name}”还差 ${price - currentPoints} 分`;
+        progressBar.max = price;
+        progressBar.value = Math.min(currentPoints, price);
+      }
+      sortCards();
+    };
+
+    cards.forEach(card => {
+      const button = card.querySelector('.exchange-btn');
+      button.addEventListener('click', async () => {
+        const price = Number(button.dataset.price);
+        if (button.disabled || card.dataset.owned === 'true') return;
+        if (!window.confirm(`确认使用 ${price} 积分兑换这件装扮吗？`)) return;
+
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        button.textContent = '正在兑换…';
+        try {
+          const response = await fetch('/api/shop/exchange', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ item_id: button.dataset.itemId }),
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok || data.success !== true) throw new Error(data.error || 'exchange_failed');
+          currentPoints = Number(data.remaining_points);
+          card.dataset.owned = 'true';
+          button.removeAttribute('aria-busy');
+          renderShop();
+          window.setMessage('success', '兑换成功，装扮已经加入你的小窝。');
+        } catch (error) {
+          button.removeAttribute('aria-busy');
+          renderShop();
+          window.setMessage('error', '暂时无法兑换，请稍后再试。');
+        }
+      });
+    });
+
+    const rewardTrack = document.getElementById('rewardPreviewTrack');
+    const previousButton = document.getElementById('rewardPrevious');
+    const nextButton = document.getElementById('rewardNext');
+    const scrollReward = direction => {
+      const firstCard = rewardTrack.querySelector('.reward-preview-card');
+      const distance = firstCard ? firstCard.getBoundingClientRect().width + 14 : rewardTrack.clientWidth * 0.8;
+      rewardTrack.scrollBy({ left: direction * distance, behavior: 'smooth' });
+    };
+    const updateRewardControls = () => {
+      const maxScroll = Math.max(0, rewardTrack.scrollWidth - rewardTrack.clientWidth);
+      previousButton.disabled = rewardTrack.scrollLeft <= 2;
+      nextButton.disabled = rewardTrack.scrollLeft >= maxScroll - 2;
+    };
+    previousButton.addEventListener('click', () => scrollReward(-1));
+    nextButton.addEventListener('click', () => scrollReward(1));
+    rewardTrack.addEventListener('keydown', event => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      event.preventDefault();
+      scrollReward(event.key === 'ArrowLeft' ? -1 : 1);
+    });
+    rewardTrack.addEventListener('scroll', updateRewardControls, { passive: true });
+    window.addEventListener('resize', updateRewardControls);
+
+    renderShop();
+    updateRewardControls();
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+{% block title %}专注记录 - 专注小窝{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='insights-pages.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="insights-page analysis-page" aria-labelledby="analysisTitle">
+  <header class="insights-hero">
+    <div>
+      <span class="insights-eyebrow">数据概览</span>
+      <h1 id="analysisTitle">专注记录</h1>
+      <p>{% if history %}查看时长、画面相关度和最近完成的专注。{% else %}完成第一轮后，这里会显示时长、评分和历史记录。{% endif %}</p>
+    </div>
+  </header>
+
+  {% if history %}
+  <div class="insights-kpi-grid" aria-label="历史数据概览">
+    <article class="insight-kpi">
+      <span>累计实际时长</span>
+      <strong>{{ history_stats.total_duration | round | int }}</strong>
+      <small>分钟</small>
+    </article>
+    <article class="insight-kpi">
+      <span>平均画面相关度</span>
+      <strong>{% if history_stats.reliable_sessions %}{{ history_stats.avg_focus_score | round | int }}{% else %}—{% endif %}</strong>
+      <small>{{ history_stats.reliable_sessions }}/{{ history_stats.total_sessions }} 次数据较完整记录</small>
+    </article>
+    <article class="insight-kpi">
+      <span>记录次数</span>
+      <strong>{{ history_stats.total_sessions }}</strong>
+      <small>已保存会话</small>
+    </article>
+    <article class="insight-kpi">
+      <span>平均完成率</span>
+      <strong>{{ history_stats.avg_completion_rate | round | int }}%</strong>
+      <small>实际时长相对计划</small>
+    </article>
+  </div>
+
+  <div class="analysis-chart-layout">
+    <article class="insight-chart-card chart-card-wide">
+      <header>
+        <div>
+          <span class="chart-kicker">最近 14 天</span>
+          <h2>每日专注时长</h2>
+        </div>
+        <span class="chart-unit">分钟</span>
+      </header>
+      <p id="dailySummary" class="chart-summary">{{ analysis_data.daily_summary }}</p>
+      <div id="dailyDurationChart" class="insight-chart chart-wide" role="img" aria-label="最近十四天每日专注时长柱状图" aria-describedby="dailySummary"></div>
+    </article>
+
+    <article class="insight-chart-card">
+      <header>
+        <div>
+          <span class="chart-kicker">最近 10 次数据较完整记录</span>
+          <h2>画面相关度变化</h2>
+        </div>
+        <span class="chart-unit">0–100 分</span>
+      </header>
+      <p id="relevanceSummary" class="chart-summary">{{ analysis_data.relevance_summary }}</p>
+      <div id="relevanceChart" class="insight-chart" role="img" aria-label="最近十次数据较完整记录的画面相关度趋势图" aria-describedby="relevanceSummary"></div>
+    </article>
+
+    <article class="insight-chart-card">
+      <header>
+        <div>
+          <span class="chart-kicker">全部记录</span>
+          <h2>各目标类型累计时长</h2>
+        </div>
+        <span class="chart-unit">分钟</span>
+      </header>
+      <p id="goalSummary" class="chart-summary">{{ analysis_data.goal_summary }}</p>
+      <div id="goalDurationChart" class="insight-chart" role="img" aria-label="各目标类型累计时长横向条形图" aria-describedby="goalSummary"></div>
+    </article>
+  </div>
+
+  <section class="history-section" aria-labelledby="historyTitle">
+    <header class="history-section-head">
+      <div>
+        <span class="insights-eyebrow">从新到旧</span>
+        <h2 id="historyTitle">历史记录</h2>
+      </div>
+      {% if history %}
+      <span class="history-count">共 {{ history | length }} 次</span>
+      {% endif %}
+    </header>
+
+    <div class="insights-history-list">
+        {% for item in history %}
+        {% set is_multidim = item.score_version == 'multidim-v1' %}
+        {% set coverage_reliable = (item.coverage_ratio | default(0) | float) >= 0.7 %}
+        {% set score_available = item.completion_score is not none %}
+        {% set evidence_reliable = item.score_reliable is sameas true %}
+        {% set reliable = is_multidim and coverage_reliable and score_available and evidence_reliable %}
+        <article class="insights-history-item">
+          <div class="history-primary">
+            <div>
+              <h3>{{ item.goal or '未命名目标' }}</h3>
+              <p>{{ item.goal_type or '未分类' }} · {{ item.end_time | default(0) | datetimeformat }}</p>
+            </div>
+            <span class="history-score{% if not reliable %} is-low-confidence{% endif %}">
+              {% if reliable %}{{ item.completion_score | round | int }} 分{% elif not is_multidim %}旧版{% elif coverage_reliable and score_available %}参考 {{ item.completion_score | round | int }} 分{% else %}数据不足{% endif %}
+            </span>
+          </div>
+          <dl class="history-metrics">
+            <div>
+              <dt>实际 / 计划</dt>
+              <dd>{{ item.actual_duration | default(0) }} / {{ item.plan_duration | default(0) }} 分钟</dd>
+            </div>
+            <div>
+              <dt>画面相关占比</dt>
+              <dd>{% if is_multidim %}{{ item.focus_ratio | default(0) | round | int }}%{% else %}—{% endif %}</dd>
+            </div>
+            <div>
+              <dt>可用分析覆盖</dt>
+              <dd>{{ ((item.coverage_ratio | default(0) | float) * 100) | round | int }}%</dd>
+            </div>
+            <div>
+              <dt>提醒</dt>
+              <dd>{{ item.alert_count | default(0) }} 次</dd>
+            </div>
+          </dl>
+          {% if not reliable %}
+          <p class="history-note">{% if not is_multidim %}旧版评分只供回看，不参与新版趋势和推荐{% elif not coverage_reliable %}可用分析覆盖不足 70%{% elif not score_available %}没有可用评分{% else %}明确判断占比不足 50% 或有效判断画面少于 3 张{% endif %}，本次不进入可比较的历史平均值。</p>
+          {% endif %}
+        </article>
+        {% endfor %}
+    </div>
+  </section>
+  {% else %}
+  <section class="analysis-first-run" aria-labelledby="firstRunTitle">
+    <span class="empty-state-mark" aria-hidden="true"></span>
+    <h2 id="firstRunTitle">还没有专注记录</h2>
+    <p>开始并完成一轮专注后，这里会自动整理你的时长和评分。</p>
+    <a class="button button-primary" href="/">开始第一轮</a>
+  </section>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+  (() => {
+    const analysisData = {{ analysis_data | tojson }};
+    const palette = {
+      accent: '#A84F2C',
+      accentDark: '#873A22',
+      ink: '#33251E',
+      muted: '#6F5C50',
+      grid: 'rgba(111, 92, 80, 0.16)',
+      fill: 'rgba(168, 79, 44, 0.14)'
+    };
+    const charts = [];
+
+    function showChartMessage(elementId, title, detail) {
+      const element = document.getElementById(elementId);
+      if (!element) return;
+      element.innerHTML = '<div class="chart-fallback"><strong></strong><span></span></div>';
+      element.querySelector('strong').textContent = title;
+      element.querySelector('span').textContent = detail;
+    }
+
+    function baseAxisText() {
+      return { color: palette.muted, fontSize: 12 };
+    }
+
+    function renderDailyChart() {
+      if (!analysisData.daily_has_data) {
+        showChartMessage('dailyDurationChart', '最近 14 天暂无记录', '完成一轮后，这里会按本机日期汇总实际时长。');
+        return;
+      }
+      const element = document.getElementById('dailyDurationChart');
+      const chart = echarts.init(element);
+      chart.setOption({
+        animationDuration: 400,
+        tooltip: {
+          trigger: 'axis',
+          renderMode: 'richText',
+          axisPointer: { type: 'shadow' },
+          formatter: params => {
+            const point = params[0];
+            const row = analysisData.daily[point.dataIndex];
+            return `${row.date}\n${point.value} 分钟`;
+          }
+        },
+        grid: { left: 12, right: 12, top: 18, bottom: 4, containLabel: true },
+        xAxis: {
+          type: 'category',
+          data: analysisData.daily.map(row => row.label),
+          axisTick: { show: false },
+          axisLine: { lineStyle: { color: palette.grid } },
+          axisLabel: { ...baseAxisText(), interval: 1 }
+        },
+        yAxis: {
+          type: 'value',
+          min: 0,
+          name: '分钟',
+          nameTextStyle: baseAxisText(),
+          axisLabel: baseAxisText(),
+          splitLine: { lineStyle: { color: palette.grid } }
+        },
+        series: [{
+          type: 'bar',
+          data: analysisData.daily.map(row => row.minutes),
+          barMaxWidth: 30,
+          itemStyle: { color: palette.accent, borderRadius: [6, 6, 0, 0] }
+        }]
+      });
+      charts.push(chart);
+    }
+
+    function renderRelevanceChart() {
+      if (!analysisData.relevance.length) {
+        showChartMessage('relevanceChart', '暂无可比较评分', '数据覆盖和明确判断达到要求后，记录才会进入这张图。');
+        return;
+      }
+      const element = document.getElementById('relevanceChart');
+      const chart = echarts.init(element);
+      chart.setOption({
+        animationDuration: 400,
+        tooltip: {
+          trigger: 'axis',
+          renderMode: 'richText',
+          formatter: params => {
+            const point = params[0];
+            const row = analysisData.relevance[point.dataIndex];
+            return `${row.label}\n${row.goal}\n${point.value} 分`;
+          }
+        },
+        grid: { left: 10, right: 18, top: 26, bottom: 4, containLabel: true },
+        xAxis: {
+          type: 'category',
+          boundaryGap: false,
+          data: analysisData.relevance.map(row => row.label),
+          axisTick: { show: false },
+          axisLine: { lineStyle: { color: palette.grid } },
+          axisLabel: { ...baseAxisText(), hideOverlap: true }
+        },
+        yAxis: {
+          type: 'value',
+          min: 0,
+          max: 100,
+          axisLabel: baseAxisText(),
+          splitLine: { lineStyle: { color: palette.grid } }
+        },
+        series: [{
+          type: 'line',
+          data: analysisData.relevance.map(row => row.score),
+          symbol: 'circle',
+          symbolSize: 8,
+          lineStyle: { color: palette.accent, width: 3 },
+          itemStyle: { color: '#FFF9F3', borderColor: palette.accentDark, borderWidth: 2 },
+          areaStyle: { color: palette.fill },
+          label: {
+            show: analysisData.relevance.length <= 5,
+            position: 'top',
+            color: palette.ink,
+            formatter: '{c}'
+          }
+        }]
+      });
+      charts.push(chart);
+    }
+
+    function renderGoalChart() {
+      if (!analysisData.goals.length) {
+        showChartMessage('goalDurationChart', '暂无目标类型数据', '有实际时长的记录会汇总到这里。');
+        return;
+      }
+      const element = document.getElementById('goalDurationChart');
+      const chart = echarts.init(element);
+      chart.setOption({
+        animationDuration: 400,
+        tooltip: {
+          trigger: 'axis',
+          renderMode: 'richText',
+          axisPointer: { type: 'shadow' },
+          formatter: params => `${params[0].name}\n${params[0].value} 分钟`
+        },
+        grid: { left: 12, right: 28, top: 12, bottom: 4, containLabel: true },
+        xAxis: {
+          type: 'value',
+          min: 0,
+          name: '分钟',
+          nameTextStyle: baseAxisText(),
+          axisLabel: baseAxisText(),
+          splitLine: { lineStyle: { color: palette.grid } }
+        },
+        yAxis: {
+          type: 'category',
+          inverse: true,
+          data: analysisData.goals.map(row => row.goal_type),
+          axisTick: { show: false },
+          axisLine: { lineStyle: { color: palette.grid } },
+          axisLabel: { ...baseAxisText(), width: 110, overflow: 'truncate' }
+        },
+        series: [{
+          type: 'bar',
+          data: analysisData.goals.map(row => row.minutes),
+          barMaxWidth: 24,
+          label: { show: true, position: 'right', color: palette.ink, formatter: '{c}' },
+          itemStyle: { color: palette.accent, borderRadius: [0, 6, 6, 0] }
+        }]
+      });
+      charts.push(chart);
+    }
+
+    function renderCharts() {
+      if (typeof echarts === 'undefined') {
+        [
+          ['dailyDurationChart', '图表组件未加载'],
+          ['relevanceChart', '图表组件未加载'],
+          ['goalDurationChart', '图表组件未加载']
+        ].forEach(([id, title]) => showChartMessage(id, title, '上方文字摘要和下方历史记录仍可正常阅读。'));
+        return;
+      }
+      renderDailyChart();
+      renderRelevanceChart();
+      renderGoalChart();
+      window.addEventListener('resize', () => charts.forEach(chart => chart.resize()), { passive: true });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', renderCharts, { once: true });
+    } else {
+      renderCharts();
+    }
+  })();
+</script>
+{% endblock %}

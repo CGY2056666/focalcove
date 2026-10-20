@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}本地评测复核 · 专注小窝{% endblock %}
+
+{% block content %}
+<section class="evaluation-review" aria-labelledby="reviewTitle">
+  <header class="review-header">
+    <div>
+      <p class="section-label">仅限本机 · 人工真值</p>
+      <h1 id="reviewTitle">评测截图人工复核</h1>
+      <p>这是盲标页面。提交人工标签前，服务器不会把模型预测、置信度或理由发送到浏览器。</p>
+    </div>
+    <div class="review-count" role="status" aria-live="polite">
+      待审核 <strong id="pendingCount">{{ pending_count }}</strong> 张
+    </div>
+  </header>
+
+  <aside class="review-privacy-warning" role="note" aria-label="隐私提醒">
+    <strong>标注前先检查隐私</strong>
+    <p>自动采集不等于已经脱敏。若截图含账号、聊天、密钥、个人信息或其他不适合评测的内容，请使用“删除候选”，不要为其添加标签。</p>
+  </aside>
+
+  <div id="reviewMessage" class="message hidden" role="status" aria-live="polite"></div>
+
+  <div id="reviewWorkspace" class="review-workspace{% if not samples %} hidden{% endif %}">
+    <figure class="review-image-panel">
+      <img
+        id="reviewImage"
+        src="{{ samples[0].image_url if samples else '' }}"
+        alt="等待人工复核的屏幕截图"
+      >
+      <figcaption>截图仅从本地采集器按样本编号读取，不展示服务器文件路径。</figcaption>
+    </figure>
+
+    <section class="review-details" aria-labelledby="sampleHeading">
+      <div class="review-sample-meta">
+        <span id="samplePosition">第 {{ 1 if samples else 0 }} 张</span>
+        <code id="sampleId">{{ samples[0].sample_id if samples else '' }}</code>
+      </div>
+      <h2 id="sampleHeading">专注目标</h2>
+      <p id="reviewGoal" class="review-goal">{{ samples[0].goal if samples else '' }}</p>
+
+      <fieldset class="review-labels">
+        <legend>选择人工标签</legend>
+        <p><strong>标注单位是“这张截图 + 上方这个具体目标”。</strong>只判断画面中是否有推进目标的证据，不推测使用者此刻是否走神。键盘可按 1–4 快速标注。</p>
+        <ol class="review-label-rules">
+          <li>图片损坏、黑屏或关键信息无法辨认吗？是则选择<strong>无法评分</strong>。</li>
+          <li>画面有直接推进目标的明确证据吗？是则选择<strong>目标相关</strong>。</li>
+          <li>画面有明确与目标无关的内容吗？是则选择<strong>目标无关</strong>。</li>
+          <li>其余正常可读但语义不足、中立、过渡或混合内容，选择<strong>不确定</strong>。</li>
+        </ol>
+        <ul class="review-label-rules">
+          <li><strong>目标相关：</strong>画面内容直接推进当前目标；仅仅打开浏览器、编辑器或文档软件还不够。</li>
+          <li><strong>不确定：</strong>画面可读，但属于中立工具、过渡页面、混合内容或证据不足。</li>
+          <li><strong>目标无关：</strong>画面可读，且有明确证据表明内容与当前目标无关。</li>
+          <li><strong>无法评分：</strong>只用于图片本身无法解码或无法辨识。截图正常但不知道是否相关，应选“不确定”；模型超时或报错也不是人工选择此项的理由。</li>
+        </ul>
+
+        <div id="humanScorePanel" aria-labelledby="humanScoreTitle">
+          <h3 id="humanScoreTitle">补充多维人工评分</h3>
+          <p>四项均按 0–4 锚点评分：0=完全没有或相反，1=弱，2=一般或无法确认，3=明确，4=直接且充分。总体证据分请独立判断，不要用四项机械相加。</p>
+          <div class="review-suggestion">
+            <div>
+              <label for="goalRelevanceScore"><strong>目标内容相关度</strong></label>
+              <select id="goalRelevanceScore" class="human-score-input" data-score-field="goal_relevance" required>
+                <option value="">请选择</option>
+                <option value="0">0 · 没有／相反</option><option value="1">1 · 弱</option>
+                <option value="2">2 · 一般／无法确认</option><option value="3">3 · 明确</option>
+                <option value="4">4 · 直接且充分</option>
+              </select>
+            </div>
+            <div>
+              <label for="taskEvidenceScore"><strong>实际任务证据</strong></label>
+              <select id="taskEvidenceScore" class="human-score-input" data-score-field="task_evidence" required>
+                <option value="">请选择</option>
+                <option value="0">0 · 没有／相反</option><option value="1">1 · 弱</option>
+                <option value="2">2 · 一般／无法确认</option><option value="3">3 · 明确</option>
+                <option value="4">4 · 直接且充分</option>
+              </select>
+            </div>
+            <div>
+              <label for="contextFitScore"><strong>场景适配度</strong></label>
+              <select id="contextFitScore" class="human-score-input" data-score-field="context_fit" required>
+                <option value="">请选择</option>
+                <option value="0">0 · 没有／相反</option><option value="1">1 · 弱</option>
+                <option value="2">2 · 一般／无法确认</option><option value="3">3 · 明确</option>
+                <option value="4">4 · 直接且充分</option>
+              </select>
+            </div>
+            <div>
+              <label for="distractionLevelScore"><strong>分心主导程度</strong></label>
+              <select id="distractionLevelScore" class="human-score-input" data-score-field="distraction_level" required>
+                <option value="">请选择</option>
+                <option value="0">0 · 没有无关内容</option><option value="1">1 · 弱</option>
+                <option value="2">2 · 一般／混合</option><option value="3">3 · 明确</option>
+                <option value="4">4 · 无关内容主导</option>
+              </select>
+            </div>
+            <div>
+              <label for="overallEvidenceScore"><strong>独立总体证据分（0–10）</strong></label>
+              <input id="overallEvidenceScore" class="human-score-input" data-score-field="overall_score" type="number" min="0" max="10" step="1" inputmode="numeric" required>
+            </div>
+            <div>
+              <label for="annotationConfidence"><strong>本次标注把握</strong></label>
+              <select id="annotationConfidence" class="human-score-input" data-score-field="annotation_confidence" required>
+                <option value="">请选择</option>
+                <option value="0.5">较低 · 0.50</option>
+                <option value="0.75">一般 · 0.75</option>
+                <option value="1">较高 · 1.00</option>
+              </select>
+            </div>
+          </div>
+          <p><small>规则版本：<code id="scoringRubricVersion">multidim-v1</code>。选择“无法评分”时无需填写以上数值。</small></p>
+        </div>
+        <div class="review-label-grid">
+          <button class="button review-label-button state-focused" type="button" data-label="focused" aria-keyshortcuts="1">
+            <kbd>1</kbd> 目标相关
+          </button>
+          <button class="button review-label-button state-uncertain" type="button" data-label="uncertain" aria-keyshortcuts="2">
+            <kbd>2</kbd> 不确定
+          </button>
+          <button class="button review-label-button state-distracted" type="button" data-label="distracted" aria-keyshortcuts="3">
+            <kbd>3</kbd> 目标无关
+          </button>
+          <button class="button review-label-button state-unscorable" type="button" data-label="unscorable" aria-keyshortcuts="4">
+            <kbd>4</kbd> 无法评分
+          </button>
+        </div>
+      </fieldset>
+
+      <button id="discardSample" class="button review-discard" type="button">
+        含敏感信息／不适合评测，删除候选
+      </button>
+    </section>
+  </div>
+
+  <div id="reviewEmpty" class="review-empty{% if samples %} hidden{% endif %}" role="status">
+    <span aria-hidden="true">✓</span>
+    <h2>暂无待审核截图</h2>
+    <p>采集器启用后，新候选会出现在这里；每张截图都需要独立人工判断。</p>
+    <a class="button" href="/">返回首页</a>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+  window.evaluationReviewSamples = {{ samples | tojson }};
+</script>
+<script src="{{ url_for('static', filename='evaluation_review.js') }}"></script>
+{% endblock %}

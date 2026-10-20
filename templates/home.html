@@ -1,0 +1,418 @@
+{% extends "base.html" %}
+{% block title %}开始专注 - 专注小窝{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='core-pages.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="home-setup core-home">
+  <header class="home-heading">
+    <span class="section-label">开始一轮专注</span>
+    <h1>现在，专心做一件事</h1>
+    <p>写下要做的事，定好时间，再选择提醒方式。</p>
+  </header>
+
+  <div class="setup-grid" aria-label="专注设置">
+    <section class="setup-card setup-card-goal" aria-labelledby="goalCardTitle">
+      <div class="setup-card-heading">
+        <span class="setup-step" aria-hidden="true">1</span>
+        <div>
+          <h2 id="goalCardTitle">这段时间要做什么？</h2>
+          <p>例如：阅读第 3 章并整理两道例题。</p>
+        </div>
+      </div>
+
+      <div class="segmented-control" role="group" aria-label="目标输入方式">
+        <button id="regularGoalBtn" class="goal-type-btn active" data-type="regular" type="button" aria-pressed="true">常用目标</button>
+        <button id="customGoalBtn" class="goal-type-btn" data-type="custom" type="button" aria-pressed="false">自定义</button>
+      </div>
+
+      <div id="regularGoalSection" class="goal-input-section">
+        <label for="regularGoal">选择目标</label>
+        <select id="regularGoal">
+          <option value="">请选择一个目标</option>
+          {% if runtime and runtime.goal_examples %}
+            {% for example in runtime.goal_examples %}
+              <option value="{{ example }}">{{ example }}</option>
+            {% endfor %}
+          {% endif %}
+        </select>
+      </div>
+
+      <div id="customGoalSection" class="goal-input-section hidden">
+        <label for="customGoal">写下具体目标</label>
+        <textarea id="customGoal" rows="3" maxlength="200" placeholder="例如：完成课程报告的研究方法部分"></textarea>
+      </div>
+    </section>
+
+    <section class="setup-card setup-card-duration" aria-labelledby="durationCardTitle">
+      <div class="setup-card-heading">
+        <span class="setup-step" aria-hidden="true">2</span>
+        <div>
+          <h2 id="durationCardTitle">准备专注多久？</h2>
+          <p>不确定时，可以先从 25 分钟开始。</p>
+        </div>
+      </div>
+
+      <div class="duration-control">
+        <label for="focusDuration">计划时长</label>
+        <div class="duration-input-wrap">
+          <input id="focusDuration" type="number" min="1" max="180" value="25" inputmode="numeric" aria-describedby="durationUnit">
+          <span id="durationUnit">分钟</span>
+        </div>
+      </div>
+
+      <div id="durationRecommendations" class="duration-recommendation" aria-labelledby="durationRecommendationTitle" role="status" aria-live="polite" aria-atomic="true" aria-busy="false">
+        <div class="recommendation-heading">
+          <strong id="durationRecommendationTitle">时长建议</strong>
+          <span id="recommendationLoading" class="recommendation-loading hidden">正在计算…</span>
+        </div>
+        <div id="recommendationEmpty" class="field-note">选好目标后显示建议。</div>
+        <div id="recommendationResult" class="recommendation-result hidden">
+          <div class="recommendation-primary">
+            <span>建议</span>
+            <strong><span id="recommendedMinutes">--</span> 分钟</strong>
+          </div>
+          <dl class="recommendation-meta">
+            <div><dt>参考程度</dt><dd id="recommendationConfidence">--</dd></div>
+            <div><dt>参考记录</dt><dd><span id="recommendationSampleCount">0</span> 次</dd></div>
+          </dl>
+          <p id="recommendationReason" class="field-note"></p>
+          <button id="applyDurationRecommendation" class="button-secondary recommendation-apply" type="button" disabled>采用建议</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="setup-card setup-card-monitoring" aria-labelledby="monitoringCardTitle">
+      <div class="setup-card-heading">
+        <span class="setup-step" aria-hidden="true">3</span>
+        <div>
+          <h2 id="monitoringCardTitle">希望怎样提醒？</h2>
+          <p>只决定何时提醒，不影响评分。</p>
+        </div>
+      </div>
+
+      <fieldset class="monitoring-options">
+        <legend class="sr-only">选择提醒方式</legend>
+        <label class="monitoring-option">
+          <input type="radio" name="monitoring" value="low">
+          <span class="monitoring-copy"><strong>安静记录</strong><small>不发实时提醒，只在报告中记录</small></span>
+        </label>
+        <label class="monitoring-option selected">
+          <input type="radio" name="monitoring" value="medium" checked>
+          <span class="monitoring-copy"><strong>温和提醒</strong><small>持续偏离时提醒，适合大多数场景</small></span>
+        </label>
+        <label class="monitoring-option">
+          <input type="radio" name="monitoring" value="high">
+          <span class="monitoring-copy"><strong>及时提醒</strong><small>明确偏离时更快提醒</small></span>
+        </label>
+      </fieldset>
+    </section>
+  </div>
+
+  <div class="start-session-row">
+    <button id="startSessionButton" class="button-primary start-session-button" type="button" aria-busy="false">
+      开始并选择共享范围
+    </button>
+    <p class="capture-disclosure">
+      开始后，请选择要共享的标签页、窗口或屏幕。系统约每 20 秒检查一次画面，结果仅供参考。
+    </p>
+    {% if runtime and runtime.evaluation_capture_enabled %}
+    <p class="capture-disclosure evaluation-capture-note" role="note">
+      评测采样已开启：部分去重截图会留在本机，供后续人工检查。请勿共享含账号、聊天、密钥或其他敏感信息的窗口。
+    </p>
+    {% endif %}
+    <div id="validationMessage" class="message error hidden" role="alert"></div>
+  </div>
+
+  <section class="focus-scenes" aria-labelledby="focusScenesTitle">
+    <div class="focus-scenes-heading">
+      <div>
+        <span class="section-label">专注场景</span>
+        <h2 id="focusScenesTitle">给今天留一小块安静的地方</h2>
+      </div>
+      <p>晨间计划、午后阅读或夜间冲刺，选一个让自己舒服的节奏。</p>
+    </div>
+
+    <div class="focus-scenes-grid">
+      <figure class="focus-scene-card">
+        <img
+          src="{{ url_for('static', filename='images/focus-scenes/morning-desk.webp') }}"
+          width="1200"
+          height="800"
+          loading="lazy"
+          alt="晨光洒在木质书桌、摊开的笔记本和陶瓷杯上"
+        >
+        <figcaption><strong>晨间计划</strong><span>从一件清楚的小事开始</span></figcaption>
+      </figure>
+
+      <figure class="focus-scene-card">
+        <img
+          src="{{ url_for('static', filename='images/focus-scenes/afternoon-reading.webp') }}"
+          width="1200"
+          height="800"
+          loading="lazy"
+          alt="窗边米色座椅上放着摊开的书与眼镜"
+        >
+        <figcaption><strong>午后阅读</strong><span>把注意力慢慢收回来</span></figcaption>
+      </figure>
+
+      <figure class="focus-scene-card">
+        <img
+          src="{{ url_for('static', filename='images/focus-scenes/evening-workspace.webp') }}"
+          width="1200"
+          height="800"
+          loading="lazy"
+          alt="夜色窗边的电脑桌被一盏暖色台灯照亮"
+        >
+        <figcaption><strong>夜间冲刺</strong><span>在安静里完成最后一段</span></figcaption>
+      </figure>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+(() => {
+  "use strict";
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const elements = {
+      regularGoalBtn: document.getElementById("regularGoalBtn"),
+      customGoalBtn: document.getElementById("customGoalBtn"),
+      regularGoalSection: document.getElementById("regularGoalSection"),
+      customGoalSection: document.getElementById("customGoalSection"),
+      regularGoal: document.getElementById("regularGoal"),
+      customGoal: document.getElementById("customGoal"),
+      focusDuration: document.getElementById("focusDuration"),
+      recommendationEmpty: document.getElementById("recommendationEmpty"),
+      recommendationResult: document.getElementById("recommendationResult"),
+      recommendationLoading: document.getElementById("recommendationLoading"),
+      recommendedMinutes: document.getElementById("recommendedMinutes"),
+      recommendationConfidence: document.getElementById("recommendationConfidence"),
+      recommendationSampleCount: document.getElementById("recommendationSampleCount"),
+      recommendationReason: document.getElementById("recommendationReason"),
+      recommendations: document.getElementById("durationRecommendations"),
+      applyRecommendation: document.getElementById("applyDurationRecommendation"),
+      startButton: document.getElementById("startSessionButton"),
+      validationMessage: document.getElementById("validationMessage"),
+    };
+
+    let currentGoalType = "regular";
+    let currentRecommendation = null;
+    let recommendationRequest = 0;
+    let recommendationController = null;
+    let customGoalTimer = 0;
+    let customGoalComposing = false;
+
+    function selectedGoal() {
+      return (currentGoalType === "regular" ? elements.regularGoal.value : elements.customGoal.value).trim();
+    }
+
+    function setGoalType(type, shouldRefresh = true) {
+      currentGoalType = type === "custom" ? "custom" : "regular";
+      const isRegular = currentGoalType === "regular";
+      elements.regularGoalSection.classList.toggle("hidden", !isRegular);
+      elements.customGoalSection.classList.toggle("hidden", isRegular);
+      elements.regularGoalBtn.classList.toggle("active", isRegular);
+      elements.customGoalBtn.classList.toggle("active", !isRegular);
+      elements.regularGoalBtn.setAttribute("aria-pressed", String(isRegular));
+      elements.customGoalBtn.setAttribute("aria-pressed", String(!isRegular));
+      if (shouldRefresh) void updateDurationRecommendation();
+    }
+
+    function formatConfidence(value) {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return "--";
+      const percentage = numeric <= 1 ? numeric * 100 : numeric;
+      return `${Math.round(Math.max(0, Math.min(100, percentage)))}%`;
+    }
+
+    function clearRecommendation(message) {
+      currentRecommendation = null;
+      elements.recommendationResult.classList.add("hidden");
+      elements.recommendationEmpty.classList.remove("hidden");
+      elements.recommendationEmpty.textContent = message;
+      elements.applyRecommendation.disabled = true;
+    }
+
+    function cancelRecommendationRequest() {
+      recommendationRequest += 1;
+      recommendationController?.abort();
+      recommendationController = null;
+      elements.recommendations.setAttribute("aria-busy", "false");
+      elements.recommendationLoading.classList.add("hidden");
+      elements.applyRecommendation.disabled = true;
+    }
+
+    function showRecommendationLoading() {
+      const hasVisibleRecommendation = currentRecommendation
+        && !elements.recommendationResult.classList.contains("hidden");
+      elements.recommendations.setAttribute("aria-busy", "true");
+      elements.recommendationLoading.classList.remove("hidden");
+      elements.applyRecommendation.disabled = true;
+      if (!hasVisibleRecommendation) {
+        clearRecommendation("正在根据近期记录计算…");
+      }
+    }
+
+    async function updateDurationRecommendation() {
+      recommendationController?.abort();
+      recommendationController = null;
+      const requestId = ++recommendationRequest;
+      const goal = selectedGoal();
+      if (!goal) {
+        elements.recommendations.setAttribute("aria-busy", "false");
+        elements.recommendationLoading.classList.add("hidden");
+        clearRecommendation("选好目标后显示建议。");
+        return;
+      }
+
+      showRecommendationLoading();
+      const controller = new AbortController();
+      recommendationController = controller;
+      try {
+        const response = await fetch(`/api/duration/recommend?goal=${encodeURIComponent(goal)}`, {
+          signal: controller.signal,
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (requestId !== recommendationRequest) return;
+        if (!response.ok || !payload.recommendation) throw new Error("recommendation_unavailable");
+
+        const recommendation = payload.recommendation;
+        const minutes = Number(recommendation.minutes);
+        if (!Number.isFinite(minutes) || minutes < 1 || minutes > 180) throw new Error("invalid_recommendation");
+
+        currentRecommendation = { ...recommendation, minutes: Math.round(minutes) };
+        elements.recommendedMinutes.textContent = String(currentRecommendation.minutes);
+        elements.recommendationConfidence.textContent = formatConfidence(recommendation.confidence);
+        elements.recommendationSampleCount.textContent = String(Math.max(0, Number(recommendation.sample_count) || 0));
+        elements.recommendationReason.textContent = recommendation.display_reason || recommendation.reason || "根据近期记录生成。";
+        elements.recommendationEmpty.classList.add("hidden");
+        elements.recommendationResult.classList.remove("hidden");
+        elements.applyRecommendation.disabled = false;
+      } catch (error) {
+        if (error?.name === "AbortError") return;
+        if (requestId === recommendationRequest) clearRecommendation("暂时无法获取建议，你仍可以直接设置时长。");
+      } finally {
+        if (requestId === recommendationRequest) {
+          recommendationController = null;
+          elements.recommendationLoading.classList.add("hidden");
+          elements.recommendations.setAttribute("aria-busy", "false");
+        }
+      }
+    }
+
+    function scheduleCustomGoalRecommendation() {
+      window.clearTimeout(customGoalTimer);
+      cancelRecommendationRequest();
+      if (customGoalComposing) return;
+      customGoalTimer = window.setTimeout(() => void updateDurationRecommendation(), 350);
+    }
+
+    elements.regularGoalBtn.addEventListener("click", () => setGoalType("regular"));
+    elements.customGoalBtn.addEventListener("click", () => setGoalType("custom"));
+    elements.regularGoal.addEventListener("change", () => void updateDurationRecommendation());
+    elements.customGoal.addEventListener("compositionstart", () => {
+      customGoalComposing = true;
+      window.clearTimeout(customGoalTimer);
+      cancelRecommendationRequest();
+    });
+    elements.customGoal.addEventListener("compositionend", () => {
+      customGoalComposing = false;
+      scheduleCustomGoalRecommendation();
+    });
+    elements.customGoal.addEventListener("input", () => {
+      if (!customGoalComposing) scheduleCustomGoalRecommendation();
+    });
+
+    document.querySelectorAll('input[name="monitoring"]').forEach((radio) => {
+      radio.addEventListener("change", () => {
+        document.querySelectorAll('input[name="monitoring"]').forEach((item) => {
+          item.closest("label")?.classList.toggle("selected", item.checked);
+        });
+      });
+    });
+
+    elements.applyRecommendation.addEventListener("click", () => {
+      if (!currentRecommendation) return;
+      elements.focusDuration.value = String(currentRecommendation.minutes);
+      window.setMessage?.("info", `已采用 ${currentRecommendation.minutes} 分钟建议。`);
+      elements.focusDuration.focus();
+    });
+
+    const savedSettings = window.getFocusSettings ? window.getFocusSettings() : {};
+    const savedDuration = Number(savedSettings.default_duration);
+    if (Number.isFinite(savedDuration) && savedDuration >= 1 && savedDuration <= 180) {
+      elements.focusDuration.value = String(savedDuration);
+    }
+    const savedMode = ["low", "medium", "high"].includes(savedSettings.default_monitoring)
+      ? savedSettings.default_monitoring
+      : "medium";
+    const savedMonitoring = document.querySelector(`input[name="monitoring"][value="${savedMode}"]`);
+    if (savedMonitoring) {
+      savedMonitoring.checked = true;
+      savedMonitoring.dispatchEvent(new Event("change"));
+    }
+
+    const initialGoal = {{ selected_goal | default('', true) | tojson }};
+    if (initialGoal) {
+      const matchingOption = Array.from(elements.regularGoal.options).find((option) => option.value === initialGoal);
+      if (matchingOption) {
+        elements.regularGoal.value = initialGoal;
+      } else {
+        elements.customGoal.value = initialGoal;
+        setGoalType("custom", false);
+      }
+    }
+    void updateDurationRecommendation();
+
+    elements.startButton.addEventListener("click", async () => {
+      const duration = Number.parseInt(elements.focusDuration.value, 10);
+      const goal = selectedGoal();
+      const monitoringMode = document.querySelector('input[name="monitoring"]:checked')?.value;
+
+      if (!Number.isFinite(duration) || duration < 1 || duration > 180) {
+        elements.validationMessage.textContent = "请设置 1 至 180 分钟的计划时长。";
+        elements.validationMessage.classList.remove("hidden");
+        elements.focusDuration.focus();
+        return;
+      }
+      if (!goal) {
+        elements.validationMessage.textContent = "请先选择或输入这轮专注的目标。";
+        elements.validationMessage.classList.remove("hidden");
+        (currentGoalType === "regular" ? elements.regularGoal : elements.customGoal).focus();
+        return;
+      }
+      if (!monitoringMode) {
+        elements.validationMessage.textContent = "请选择一种提醒方式。";
+        elements.validationMessage.classList.remove("hidden");
+        return;
+      }
+
+      elements.validationMessage.classList.add("hidden");
+      elements.startButton.disabled = true;
+      elements.startButton.setAttribute("aria-busy", "true");
+      elements.startButton.textContent = "正在准备…";
+      try {
+        const response = await fetch("/api/session/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ goal, duration_minutes: duration, monitoring_mode: monitoringMode }),
+        });
+        if (!response.ok) throw new Error("session_start_failed");
+        window.location.assign("/focus");
+      } catch (_error) {
+        elements.validationMessage.textContent = "暂时无法开始这轮专注，请检查网络后重试。";
+        elements.validationMessage.classList.remove("hidden");
+        elements.startButton.disabled = false;
+        elements.startButton.setAttribute("aria-busy", "false");
+        elements.startButton.textContent = "开始并选择共享范围";
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}

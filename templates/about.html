@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+{% block title %}用户使用手册 - 专注小窝{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='insights-pages.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="hero guide-hero">
+  <div class="hero-copy">
+    <span class="hero-kicker">用户使用手册</span>
+    <h1>专注小窝使用说明</h1>
+    <p class="hero-intro">从开始专注到查看报告，这里保留了完整操作说明和开发者备注。</p>
+  </div>
+</section>
+
+<div class="manual-layout">
+  <nav class="manual-toc" aria-label="使用说明目录">
+    <strong>本页目录</strong>
+    <a href="#manualQuick">快速开始</a>
+    <a href="#manualResults">结果怎么看</a>
+    <a href="#manualFaq">常见问题</a>
+    <a href="#manualPrivacy">评分与隐私说明</a>
+    <a href="#manualDeveloper">开发者备注</a>
+  </nav>
+
+  <div class="manual-surface">
+  <details id="manualQuick" class="manual-group" open>
+    <summary><span>01</span><strong>快速开始</strong><small>账号、目标、时长和屏幕共享</small></summary>
+    <div class="manual-group-body">
+  <section class="panel guide-section" aria-labelledby="guidePreface">
+    <span class="guide-index" aria-hidden="true">序</span>
+    <div class="guide-copy">
+      <h2 id="guidePreface">前言与手册定位</h2>
+      <p>本手册说明当前本地原型的操作方法、数据边界、已实现功能和后续规划，供使用者体验与开发者核对功能。实际能力以当前版本页面和运行结果为准；本页不是正式服务协议、隐私政策或效果承诺。</p>
+    </div>
+  </section>
+
+  <section class="panel guide-section" aria-labelledby="guideOverview">
+    <span class="guide-index" aria-hidden="true">1</span>
+    <div class="guide-copy">
+      <h2 id="guideOverview">产品概述与设计思路</h2>
+      <p>专注小窝是一款面向学习、办公、阅读和创作场景的专注辅助原型。你先写下本轮目标，主动选择一个屏幕、窗口或浏览器标签页作为分析范围；系统定时观察共享画面与目标是否相关，在需要时提醒，并在结束后保存记录。</p>
+      <h3>它解决什么问题</h3>
+      <ul>
+        <li><strong>目标引导：</strong>用一条具体目标降低启动任务时的犹豫，并为后续画面判断提供上下文。</li>
+        <li><strong>轻量干预：</strong>提供低、中、高三档提醒，尽量只在符合条件时打断当前操作。</li>
+        <li><strong>完成反馈：</strong>把计划时长、实际时长、画面相关情况和提醒记录整理成一次可回看的报告。</li>
+        <li><strong>趣味激励：</strong>数据较完整的会话可以获得积分，积分可兑换并布置虚拟小窝装扮。</li>
+      </ul>
+      <p>产品设计参考了目标设置、及时反馈、最小干预和代币激励等思路，但当前原型没有完成心理学有效性验证。模型只能判断<strong>共享画面与文字目标的相关程度</strong>，不能直接观察人的注意力、思考过程、情绪或任务完成质量。</p>
+    </div>
+  </section>
+
+  <section class="panel guide-section" aria-labelledby="guideAccount">
+    <span class="guide-index" aria-hidden="true">2</span>
+    <div class="guide-copy">
+      <h2 id="guideAccount">账号注册、登录与个人设置</h2>
+      <h3>创建和使用账号</h3>
+      <ul>
+        <li>当前注册只需要用户名和密码。用户名为 1–32 个中文、字母、数字、下划线或连字符，密码至少 8 个字符并同时包含字母和数字。</li>
+        <li>注册成功后会直接登录；以后可以使用相同用户名和密码进入当前原型服务。</li>
+        <li>专注历史、积分、已兑换装扮和小窝布局按当前账号保存在运行这套原型的电脑上。</li>
+      </ul>
+      <h3>个人设置</h3>
+      <p>“个人设置”可以保存默认计划时长、默认提醒方式和提醒声音。每次开始前仍可修改这些选项。偏好保存在当前浏览器；换浏览器或清理浏览器数据后需要重新设置。</p>
+      <p><strong>当前边界：</strong>手机号或邮箱注册、验证码登录、找回或修改密码、账号注销、多设备同步和异常账号处理尚未实现，均属于后续规划功能。请勿把本地原型账号用于存放重要或敏感资料。</p>
+    </div>
+  </section>
+
+  <section class="panel guide-section" aria-labelledby="guideStart">
+    <span class="guide-index" aria-hidden="true">3</span>
+    <div class="guide-copy">
+      <h2 id="guideStart">开始一轮专注</h2>
+      <h3>第一步：写清楚目标</h3>
+      <p>你可以从常用目标中选择，也可以输入自定义目标。页面最多接收 200 个字符，当前服务端取前 160 个字符作为分析目标。自定义目标是当前原型已经开放的基础功能，不需要会员。建议同时写清“对象”和“动作”，例如“阅读概率论教材第 3 章并整理例题”，通常比“学习”更便于判断。</p>
+      <h3>第二步：设置计划时长</h3>
+      <p>可设置 1–180 分钟。历史不足时系统通常给出 25 分钟参考；积累足够多的数据较完整记录后，系统会参考相同目标或相近目标类型生成建议。建议时长只是辅助，你可以采用，也可以直接输入更适合当下状态的时长。</p>
+      <h3>第三步：选择提醒方式</h3>
+      <p>低、中、高三档只改变提醒触发方式，不改变模型的单帧评分。大多数日常学习和办公可先使用“中：温和提醒”。</p>
+      <h3>第四步：选择共享范围</h3>
+      <p>点击“开始并选择共享范围”进入专注页，再点击“选择共享范围”，浏览器会显示自己的屏幕共享选择器。请选择本轮任务所在的标签页、窗口或屏幕，再确认共享。这个系统不能替你自动选中，也不能绕过浏览器权限。</p>
+      <ul>
+        <li>只共享一个任务窗口，通常更容易获得稳定、可解释的结果。</li>
+        <li>如果要在多个应用之间切换，可共享整个屏幕，但应先关闭聊天、账号、密钥和其他敏感内容。</li>
+        <li>关闭共享、刷新页面、浏览器休眠或网络中断都可能造成采集缺口。</li>
+      </ul>
+    </div>
+  </section>
+
+    </div>
+  </details>
+
+  <details id="manualResults" class="manual-group">
+    <summary><span>02</span><strong>结果怎么看</strong><small>画面状态、提醒、报告与积分</small></summary>
+    <div class="manual-group-body">
+  <section class="panel guide-section" aria-labelledby="guideMonitor">
+    <span class="guide-index" aria-hidden="true">4</span>
+    <div class="guide-copy">
+      <h2 id="guideMonitor">屏幕分析、状态与三档提醒</h2>
+      <h3>屏幕怎样被分析</h3>
+      <p>会话开始后通常立即采集首帧，此后约每 20 秒采集一次。浏览器会先缩放和压缩截图，再发送给服务端配置的视觉模型。静止或近似画面可能暂时复用上一结果；模型请求超时、网络错误或格式异常时，本帧会在规定时间内显示为“本次没有结果”，不会一直阻塞下一次采集。</p>
+      <div class="state-explainer">
+        <div><strong>画面与目标相关</strong><span>模型认为当前共享内容与目标相关，并有足够证据。</span></div>
+        <div><strong>暂时无法判断</strong><span>通用工具、中立页面、切换过程或证据不足，不直接视为偏离。</span></div>
+        <div><strong>画面可能偏离目标</strong><span>模型较明确地识别到当前画面与目标无关。</span></div>
+        <div><strong>本次未能分析</strong><span>图片无效、超时、网络错误或返回异常，不计作相关或偏离。</span></div>
+      </div>
+      <h3>画面任务相关度怎样产生</h3>
+      <p>模型不直接给出总分，而是分别判断“目标内容相关度、实际任务证据、场景适配度、分心主导程度”四项 0–4 证据。服务端按 50% / 25% / 15% / 10% 合成基础分，再依据模型置信度向 50 分适度收缩，并只用过去最多 3 个独立画面做轻量因果平滑。这个 0–100 数值表示共享画面的任务相关证据，不是心理专注力、能力或完成质量。</p>
+      <p>状态和连续分彼此独立：类别与置信度决定是否为相关、不确定或偏离，连续分只用于趋势、报告和积分。通用工具、空白页、欢迎页或只有目标文字而没有实际任务内容的画面通常属于“不确定”，不会因为数字分数较低就变成偏离。</p>
+      <h3>提醒规则</h3>
+      <ul>
+        <li><strong>低 · 安静记录：</strong>专注过程中不发实时提醒，只在结束后的记录中保留可能偏离的片段统计。</li>
+        <li><strong>中 · 温和提醒：</strong>检查最近约 60 秒；至少有 3 个有效结果、当前仍为偏离且窗口内偏离占比超过一半时提醒，之后约 120 秒内不重复提醒。</li>
+        <li><strong>高 · 及时提醒：</strong>高置信度的一次偏离可立即提醒，普通偏离通常需要连续出现；提醒后约 30 秒冷却，并在连续相关结果后重新允许提醒。</li>
+      </ul>
+      <p>“暂时无法判断”和“本次未能分析”都不会触发提醒，也不会被当作恢复专注的证据。提醒以页面内固定提示条为主；个人设置中的声音开关决定是否播放提示音。浏览器系统通知尚未接入。</p>
+    </div>
+  </section>
+
+  <section class="panel guide-section" aria-labelledby="guideReport">
+    <span class="guide-index" aria-hidden="true">5</span>
+    <div class="guide-copy">
+      <h2 id="guideReport">结束会话、报告与数据记录</h2>
+      <h3>结束与保存</h3>
+      <p>到达计划时长后系统会自动结束；你也可以提前点击“结束并查看报告”。系统会停止浏览器采集，保存本轮历史，然后进入本轮报告。提前结束会如实记录实际时长和完成率，不会伪装成已完成。</p>
+      <h3>报告包含什么</h3>
+      <ul>
+        <li>本轮目标、目标类型、计划时长、实际时长和完成率。</li>
+        <li>可用分析覆盖率、平均画面相关度，以及按采集节奏估算的相关和偏离时长。</li>
+        <li>模型判为偏离的截图数、实际触发的提醒次数和本轮积分。</li>
+      </ul>
+      <p>一轮记录要进入历史统计，需要同时满足：可用分析覆盖至少 70%、至少 3 张有效判断画面、明确判断时间占全部可评分时间至少 50%。覆盖合格但明确判断较少时仍会显示时间加权“参考分”，但不进入历史平均值、不发积分、不更新建议时长；全程都没有得到可用结果时不显示分数。</p>
+      <h3>历史与导出</h3>
+      <p>“专注记录”页会展示最近 14 天时长、近期数据较完整记录的画面相关度变化、各目标类型累计时长和历史会话列表。个人设置中可导出当前账号的 JSON 记录。周报、月报、年报以及 PDF 一键导出目前尚未实现，属于规划功能。</p>
+    </div>
+  </section>
+
+  <section class="panel guide-section" aria-labelledby="guideRewards">
+    <span class="guide-index" aria-hidden="true">6</span>
+    <div class="guide-copy">
+      <h2 id="guideRewards">积分、装扮商店与我的小窝</h2>
+      <h3>积分怎样产生</h3>
+      <p>本轮记录成功保存且数据较完整时，服务端会综合实际记录时长、平均画面任务相关度和覆盖率计算积分。覆盖不足、明确判断较少或旧版评分会话获得 0 分。积分是原型内的趣味反馈，不代表人的能力、学习质量，也不具有现金价值。</p>
+      <h3>可以真实操作的内容</h3>
+      <ul>
+        <li>装扮商店中的虚拟地板、墙面、家具和摆件可使用积分兑换。</li>
+        <li>兑换价格由服务端校验；每件装扮只兑换一次，已拥有的物品不会重复扣分。</li>
+        <li>进入“我的小窝”后，可以更换地板和墙面、摆放多个家具或装饰，并把当前布局保存到账号。</li>
+      </ul>
+      <h3>保留展示但尚未开放的奖励</h3>
+      <p>音乐会员、平台会员、咖啡券、零食、饮品、购书额度和优惠券等仍保留在商店中作为奖励体系的原型预览，当前按钮不可兑换，不扣积分，也不对应真实会员、现金、优惠券、商品配送或其他实体权益。未来如接入真实合作方，会另行补充兑换、核销、退款与售后规则。</p>
+    </div>
+  </section>
+
+    </div>
+  </details>
+
+  <details id="manualFaq" class="manual-group">
+    <summary><span>03</span><strong>常见问题</strong><small>使用建议与常见疑问</small></summary>
+    <div class="manual-group-body">
+  <section class="panel guide-section" aria-labelledby="guidePractice">
+    <span class="guide-index" aria-hidden="true">8</span>
+    <div class="guide-copy">
+      <h2 id="guidePractice">场景搭配与使用技巧</h2>
+      <h3>推荐搭配</h3>
+      <ul>
+        <li><strong>日常学习、写作与办公：</strong>目标写到具体章节或交付物，先用 25 分钟和中档提醒。</li>
+        <li><strong>考前冲刺或明确任务：</strong>共享单一任务窗口，使用高档提醒；若频繁误提醒，应退回中档并检查目标是否过于含糊。</li>
+        <li><strong>创意构思、资料搜索：</strong>搜索页面可能暂时难以判断，建议选择低档提醒，以结束后的记录为主。</li>
+        <li><strong>跨软件工作：</strong>必须在多个应用间切换时可共享整个屏幕，同时主动整理桌面并关闭敏感窗口。</li>
+      </ul>
+      <h3>怎样让结果更有参考价值</h3>
+      <ul>
+        <li>将“大目标”拆成一轮能完成的小任务，例如从“写论文”改为“完成结果部分第一张图的解释”。</li>
+        <li>不要把与任务相关的资料页和纯娱乐页频繁混在同一个标签页中。</li>
+        <li>发现明显误判时，以实际任务为准；不要为了维持分数而改变合理的工作方式。</li>
+        <li>先看多次记录的变化和具体偏离片段，不要用单次分数评价自己。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="panel guide-section" aria-labelledby="guideFaq">
+    <span class="guide-index" aria-hidden="true">10</span>
+    <div class="guide-copy">
+      <h2 id="guideFaq">常见问题（FAQ）</h2>
+
+      <div class="collapse-panel">
+        <button class="collapse-header" type="button" aria-expanded="false" aria-controls="faqScore">画面相关度等于我的专注力吗？</button>
+        <div id="faqScore" class="collapse-content">
+          <div class="collapse-body"><p>不等于。它主要反映模型看到的共享画面与文字目标是否相关。人在相关页面上也可能走神，在空白页思考也可能非常专注，因此请把结果作为复盘线索，而不是心理状态测量。</p></div>
+        </div>
+      </div>
+
+      <div class="collapse-panel">
+        <button class="collapse-header" type="button" aria-expanded="false" aria-controls="faqShare">为什么没有成功开始屏幕共享？</button>
+        <div id="faqShare" class="collapse-content">
+          <div class="collapse-body"><p>浏览器必须由你手动选择一个标签页、窗口或屏幕并确认。取消选择或拒绝权限时可以点击“重新选择”；主动停止共享或共享对象结束时，本轮会话可能直接结束并生成记录。请在浏览器选择器中确认已有选中项后再共享。</p></div>
+        </div>
+      </div>
+
+      <div class="collapse-panel">
+        <button class="collapse-header" type="button" aria-expanded="false" aria-controls="faqPending">为什么会显示“本次没有结果”或“结果复用”？</button>
+        <div id="faqPending" class="collapse-content">
+          <div class="collapse-body"><p>模型超时、网络错误或返回不完整时会显示“本次没有结果”，该帧不算相关也不算偏离；画面与上一帧非常接近时可能复用最近结果，以减少重复等待。静止画面达到一定时间后仍会重新调用模型。</p></div>
+        </div>
+      </div>
+
+      <div class="collapse-panel">
+        <button class="collapse-header" type="button" aria-expanded="false" aria-controls="faqPoints">为什么完成后没有获得积分？</button>
+        <div id="faqPoints" class="collapse-content">
+          <div class="collapse-body"><p>常见原因包括可用分析覆盖不足 70%、有效判断画面少于 3 张，或明确判断时间不足可评分时间的一半。只有新版记录成功保存且三项数据条件都达到后才计算积分；积分多少还会受到实际时长、画面相关度和覆盖率影响。</p></div>
+        </div>
+      </div>
+
+      <div class="collapse-panel">
+        <button class="collapse-header" type="button" aria-expanded="false" aria-controls="faqReward">音乐会员、优惠券和实体奖励可以兑换吗？</button>
+        <div id="faqReward" class="collapse-content">
+          <div class="collapse-body"><p>暂时不能。这些项目是为了展示未来奖励体系而保留的原型卡片。当前只有虚拟小窝装扮能够真实扣除积分、进入已拥有列表并摆放到小窝中。</p></div>
+        </div>
+      </div>
+
+      <div class="collapse-panel">
+        <button class="collapse-header" type="button" aria-expanded="false" aria-controls="faqExport">报告可以导出吗？</button>
+        <div id="faqExport" class="collapse-content">
+          <div class="collapse-body"><p>当前可以在个人设置中导出 JSON 格式的专注历史，方便备份和检查；PDF 报告、周报、月报和年报仍在规划中，页面目前没有对应的正式导出能力。</p></div>
+        </div>
+      </div>
+
+      <div class="collapse-panel">
+        <button class="collapse-header" type="button" aria-expanded="false" aria-controls="faqFeedback">遇到误判或功能问题怎样处理？</button>
+        <div id="faqFeedback" class="collapse-content">
+          <div class="collapse-body"><p>先以你的实际任务判断为准，可以改用更具体的目标、缩小共享范围或降低提醒档位。当前版本没有正式在线客服和工单入口；开发测试期间请通过项目开发者约定的渠道提交问题，并附上目标、提醒档位、浏览器和大致发生时间，不要附带含隐私的原始截图。</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+    </div>
+  </details>
+
+  <details id="manualPrivacy" class="manual-group">
+    <summary><span>04</span><strong>评分与隐私说明</strong><small>模型边界、截图和本地数据</small></summary>
+    <div class="manual-group-body">
+  <section class="panel guide-section" aria-labelledby="guidePrivacy">
+    <span class="guide-index" aria-hidden="true">7</span>
+    <div class="guide-copy">
+      <h2 id="guidePrivacy">隐私、截图与数据边界</h2>
+      <ul>
+        <li><strong>你决定共享范围：</strong>系统只能看到你在浏览器选择器中主动确认的标签页、窗口或屏幕。可以随时停止共享或结束会话。</li>
+        <li><strong>截图会发送给模型：</strong>压缩后的画面会经本地服务端发送给配置的外部视觉模型进行判断，因此不要共享包含聊天记录、证件、支付信息、API Key 或其他敏感内容的窗口。</li>
+        <li><strong>默认不保存原始截图：</strong>普通专注历史主要保存时间、状态、分数和摘要，不默认把原始截图作为历史落盘。</li>
+        <li><strong>评测采样是例外：</strong>开发者显式开启本地评测采样时，首页会显示提示，部分去重截图会保存在本机等待人工复核。含敏感信息的候选应直接删除。</li>
+        <li><strong>账号数据位于原型服务：</strong>用户名、密码哈希、专注历史、积分和小窝数据保存在当前服务的本地数据文件中；浏览器偏好保存在当前浏览器。</li>
+        <li><strong>模型密钥不进入浏览器：</strong>模型 API Key 只由运行服务的开发者在服务端环境中配置。</li>
+      </ul>
+      <p>这是可信本机或局域网内使用的单进程原型，不具备公网生产系统的完整认证、安全审计、跨设备同步和灾难恢复能力。使用前仍应由使用者自行确认共享内容是否合适。</p>
+    </div>
+  </section>
+    </div>
+  </details>
+
+  <details id="manualDeveloper" class="manual-group manual-developer-group">
+    <summary><span>05</span><strong>开发者备注</strong><small>尚未开放的能力与反馈方式</small></summary>
+    <div class="manual-group-body">
+
+  <section class="panel guide-section prototype-note" aria-labelledby="guideRoadmap">
+    <span class="guide-index" aria-hidden="true">9</span>
+    <div class="guide-copy">
+      <h2 id="guideRoadmap">开发中功能与原型限制</h2>
+      <p>为了保留产品设计的完整构想，下列内容会继续出现在说明或奖励预览中，但当前版本不能按正式功能使用：</p>
+      <ul>
+        <li><strong>账号能力规划：</strong>手机号或邮箱验证码、找回和修改密码、账号注销、跨设备同步。</li>
+        <li><strong>会员与权益规划：</strong>付费会员、会员专属功能、支付退款、音乐会员、优惠券、实体奖品兑换和物流售后。</li>
+        <li><strong>报告能力规划：</strong>自动生成周报、月报和年报，PDF 导出、社交分享和更完整的行为建议。</li>
+        <li><strong>服务能力规划：</strong>在线客服、工单反馈、浏览器系统通知和生产级多用户部署。</li>
+      </ul>
+      <p>当前模型可能误判、超时或无法解析；浏览器休眠和共享中止会导致采样缺口；活动会话只保存在当前应用进程中。页面所显示的模型分数、建议时长和提醒都属于辅助反馈，不是医学、心理学或教育评价结论，也不应作为奖惩、考核或证明个人能力的依据。</p>
+    </div>
+  </section>
+
+  <section class="panel guide-section" aria-labelledby="guideFeedback">
+    <span class="guide-index" aria-hidden="true">11</span>
+    <div class="guide-copy">
+      <h2 id="guideFeedback">版本更新与开发反馈</h2>
+      <p>本手册会随原型功能、评分规则和页面入口一起更新。开发测试期间如发现功能问题，请通过项目开发者约定的渠道反馈，并尽量提供目标文本、提醒档位、浏览器、发生时间和可复现步骤；不要发送含账号、聊天、密钥或其他隐私信息的原始截图。</p>
+      <p>当前项目没有正式在线客服、服务时限或自动工单系统。若后续接入正式运营、付费权益或外部奖励，应由开发者在上线前补充联系方式、服务范围、兑换核销、退款售后和数据处理规则。</p>
+    </div>
+  </section>
+
+    </div>
+  </details>
+  </div>
+
+  <div class="hero-actions guide-actions">
+    <a href="/" class="button button-primary">开始设置目标</a>
+    <a href="/rules" class="button button-secondary">查看使用规则</a>
+    <a href="/shop" class="button button-secondary">浏览装扮与奖励预览</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const manualGroups = Array.from(document.querySelectorAll('.manual-group'));
+    const desktopManual = window.matchMedia('(min-width: 721px)');
+
+    const manualChapters = Array.from(document.querySelectorAll('.manual-group .guide-section')).map((section, index) => {
+      const copy = section.querySelector('.guide-copy');
+      const heading = copy?.querySelector(':scope > h2');
+      if (!copy || !heading) return null;
+
+      const content = document.createElement('div');
+      content.id = `manualChapterContent${index + 1}`;
+      content.className = 'manual-chapter-content';
+      Array.from(copy.childNodes).forEach((node) => {
+        if (node !== heading) content.appendChild(node);
+      });
+
+      const toggle = document.createElement('button');
+      toggle.className = 'manual-chapter-toggle';
+      toggle.type = 'button';
+      toggle.textContent = heading.textContent;
+      toggle.setAttribute('aria-controls', content.id);
+      toggle.hidden = true;
+      copy.append(toggle, content);
+
+      const chapter = {
+        content,
+        heading,
+        mobileOpen: heading.id === 'guideStart',
+        toggle,
+      };
+      toggle.addEventListener('click', () => {
+        chapter.mobileOpen = !chapter.mobileOpen;
+        toggle.setAttribute('aria-expanded', String(chapter.mobileOpen));
+        content.hidden = !chapter.mobileOpen;
+      });
+      return chapter;
+    }).filter(Boolean);
+
+    const syncManualGroups = (wideScreen) => {
+      manualGroups.forEach((group, index) => {
+        group.open = wideScreen || index === 0;
+      });
+    };
+
+    const syncManualChapters = (wideScreen) => {
+      manualChapters.forEach((chapter) => {
+        chapter.heading.hidden = !wideScreen;
+        chapter.toggle.hidden = wideScreen;
+        chapter.toggle.setAttribute('aria-expanded', String(wideScreen || chapter.mobileOpen));
+        chapter.content.hidden = !wideScreen && !chapter.mobileOpen;
+      });
+    };
+
+    syncManualGroups(desktopManual.matches);
+    syncManualChapters(desktopManual.matches);
+    desktopManual.addEventListener?.('change', (event) => {
+      syncManualGroups(event.matches);
+      syncManualChapters(event.matches);
+    });
+
+    document.querySelectorAll('.manual-toc a').forEach((link) => {
+      link.addEventListener('click', () => {
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target instanceof HTMLDetailsElement) target.open = true;
+      });
+    });
+
+    document.querySelectorAll('.collapse-header').forEach((header) => {
+      header.addEventListener('click', () => {
+        const content = header.nextElementSibling;
+        const expanded = header.getAttribute('aria-expanded') === 'true';
+        header.setAttribute('aria-expanded', String(!expanded));
+        header.classList.toggle('active', !expanded);
+        content?.classList.toggle('active', !expanded);
+      });
+    });
+  });
+</script>
+{% endblock %}

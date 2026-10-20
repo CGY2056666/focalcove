@@ -1,0 +1,28 @@
+name: focalcove-mobile
+
+services:
+  mobile-api:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: focalcove-mobile:android-mvp
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env.production
+    ports:
+      # Existing host Nginx reaches the service through loopback only.
+      - "127.0.0.1:8001:8000"
+    volumes:
+      - runtime:/app/runtime
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  runtime:
+    name: focalcove-mobile-runtime

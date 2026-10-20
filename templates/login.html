@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 - 专注小窝</title>
+  <link rel="icon" href="{{ url_for('static', filename='brand-mark.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='design-system.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='insights-pages.css') }}">
+</head>
+<body class="auth-page">
+  <a class="skip-link" href="#authForm">跳到登录表单</a>
+  <main class="auth-shell">
+    <section class="auth-intro" aria-labelledby="welcomeTitle">
+      <a class="auth-brand" href="/login" aria-label="专注小窝登录页">
+        <img src="{{ url_for('static', filename='brand-mark.svg') }}" alt="">
+        <span>专注小窝</span>
+      </a>
+      <div class="auth-intro-copy">
+        <h1 id="welcomeTitle">继续你的专注</h1>
+        <p>回到自己的记录和小窝，从下一件要做的事开始。</p>
+      </div>
+      <p class="auth-note">这是一个本地原型，模型判断仅作辅助参考。</p>
+    </section>
+
+    <section class="auth-card" aria-labelledby="loginTitle">
+      <h2 id="loginTitle">登录</h2>
+      <p>输入用户名和密码，继续使用。</p>
+
+      {% if error %}
+      <div class="auth-message error" role="alert">{{ error }}</div>
+      {% endif %}
+
+      <form id="authForm" class="auth-form" method="POST" action="/login">
+        <div class="form-group">
+          <label for="username">用户名</label>
+          <input type="text" id="username" name="username" autocomplete="username" maxlength="32" aria-describedby="usernameHint" required autofocus>
+          <small id="usernameHint" class="field-note">1–32 个中文、字母、数字、下划线或连字符。</small>
+        </div>
+        <div class="form-group">
+          <label for="password">密码</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="auth-submit">登录</button>
+      </form>
+
+      <p class="auth-switch">还没有账号？<a href="/register">创建账号</a></p>
+    </section>
+  </main>
+</body>
+</html>

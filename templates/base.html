@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}专注小窝{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='brand-mark.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='design-system.css') }}">
+  {% if request.path == '/analysis' %}
+  <script src="{{ url_for('static', filename='vendor/echarts/5.4.3/echarts.min.js') }}"></script>
+  {% endif %}
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <a class="skip-link" href="#mainContent">跳到主要内容</a>
+
+  <nav class="navbar" aria-label="主导航">
+    <div class="navbar-container">
+      <a href="{{ '/focus' if is_running else '/' }}" class="navbar-logo" aria-label="专注小窝{% if is_running %}，返回当前专注{% else %}首页{% endif %}">
+        <span class="logo-icon" aria-hidden="true">
+          <img src="{{ url_for('static', filename='brand-mark.svg') }}" alt="">
+        </span>
+        <span>专注小窝</span>
+      </a>
+
+      <button id="navToggle" class="nav-toggle" type="button" aria-expanded="false" aria-controls="primaryNavigation">
+        <span class="sr-only">打开导航菜单</span>
+        <span class="nav-toggle-lines" aria-hidden="true"></span>
+      </button>
+
+      <div id="primaryNavigation" class="navbar-menu">
+        <a href="{{ '/focus' if is_running else '/' }}" class="{% if request.path in ['/', '/focus'] %}active{% endif %}"{% if request.path in ['/', '/focus'] %} aria-current="page"{% endif %}>
+          {{ '当前专注' if is_running else '开始专注' }}
+        </a>
+        <a href="/analysis" class="{% if request.path in ['/analysis', '/report'] %}active{% endif %} {% if is_running %}disabled-link{% endif %}"{% if request.path in ['/analysis', '/report'] %} aria-current="page"{% endif %}>专注记录</a>
+        <a href="/den" class="{% if request.path == '/den' %}active{% endif %} {% if is_running %}disabled-link{% endif %}"{% if request.path == '/den' %} aria-current="page"{% endif %}>我的小窝</a>
+        <a href="/shop" class="{% if request.path == '/shop' %}active{% endif %} {% if is_running %}disabled-link{% endif %}"{% if request.path == '/shop' %} aria-current="page"{% endif %}>装扮商店</a>
+        <a href="/about" class="{% if request.path in ['/about', '/rules'] %}active{% endif %} {% if is_running %}disabled-link{% endif %}"{% if request.path in ['/about', '/rules'] %} aria-current="page"{% endif %}>使用说明</a>
+        <a href="/profile" class="mobile-profile-link {% if request.path == '/profile' %}active{% endif %} {% if is_running %}disabled-link{% endif %}"{% if request.path == '/profile' %} aria-current="page"{% endif %}>
+          个人设置 · {{ runtime.user_points if runtime else 0 }} 积分
+        </a>
+      </div>
+
+      <a href="/profile" class="navbar-profile desktop-profile {% if is_running %}disabled-link{% endif %}" aria-label="个人设置，当前 {{ runtime.user_points if runtime else 0 }} 积分"{% if request.path == '/profile' %} aria-current="page"{% endif %}>
+        <span class="profile-dot" aria-hidden="true"></span>
+        <span>{{ runtime.user_points if runtime else 0 }} 积分</span>
+      </a>
+    </div>
+  </nav>
+
+  {% if is_running and request.path != '/focus' %}
+  <div id="focusLockDialog" class="focus-lock-mask" role="dialog" aria-modal="true" aria-labelledby="focusLockTitle" aria-describedby="focusLockDescription" tabindex="-1">
+    <div class="lock-card">
+      <img src="{{ url_for('static', filename='brand-mark.svg') }}" width="54" height="54" alt="">
+      <h2 id="focusLockTitle">专注会话仍在进行</h2>
+      <p id="focusLockDescription">返回专注页继续计时，或者结束本次会话后再访问其他页面。</p>
+      <div class="focus-lock-actions">
+        <a href="/focus" class="button button-primary">返回专注页</a>
+        <button onclick="abandonSession()" class="button button-neutral" type="button">结束本次会话</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <main id="mainContent" class="page-wrapper" tabindex="-1">
+    <div class="page-shell">
+      <div id="liveMessage" class="message hidden" role="status" aria-live="polite"></div>
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+  <script>
+    window.isRunning = {{ 'true' if is_running else 'false' }};
+  </script>
+  {% block extra_script %}{% endblock %}
+</body>
+</html>

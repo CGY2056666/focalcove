@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>注册 - 专注小窝</title>
+  <link rel="icon" href="{{ url_for('static', filename='brand-mark.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='design-system.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='insights-pages.css') }}">
+</head>
+<body class="auth-page">
+  <a class="skip-link" href="#authMain">跳到账号区域</a>
+  <main class="auth-shell">
+    <section class="auth-intro" aria-labelledby="welcomeTitle">
+      <a class="auth-brand" href="/login" aria-label="返回专注小窝登录页">
+        <img src="{{ url_for('static', filename='brand-mark.svg') }}" alt="">
+        <span>专注小窝</span>
+      </a>
+      <div class="auth-intro-copy">
+        <h1 id="welcomeTitle">保存记录和小窝装扮</h1>
+        <p>创建账号后，专注记录、积分和已兑换的装扮会留在这里。</p>
+      </div>
+      <p class="auth-note">账号只用于这套本地版本。</p>
+    </section>
+
+    <section id="authMain" class="auth-card" aria-labelledby="registerTitle">
+      {% if success %}
+      <h2 id="registerTitle">账号已创建</h2>
+      <div class="auth-message success" role="status">{{ success }}</div>
+      <p>你已经登录，可以直接开始第一轮专注。</p>
+      <div class="auth-success-actions">
+        <a class="button button-primary" href="/">开始设置目标</a>
+      </div>
+      {% else %}
+      <h2 id="registerTitle">创建账号</h2>
+      <p>只需要用户名和密码。</p>
+
+      {% if error %}
+      <div class="auth-message error" role="alert">{{ error }}</div>
+      {% endif %}
+
+      <form id="authForm" class="auth-form" method="POST" action="/register">
+        <div class="form-group">
+          <label for="username">用户名</label>
+          <input type="text" id="username" name="username" autocomplete="username" maxlength="32" aria-describedby="usernameHint" required autofocus>
+          <small id="usernameHint" class="field-note">1–32 个中文、字母、数字、下划线或连字符。</small>
+        </div>
+        <div class="form-group">
+          <label for="password">密码</label>
+          <input type="password" id="password" name="password" autocomplete="new-password" minlength="8" aria-describedby="passwordHint" required>
+          <small id="passwordHint" class="field-note">至少 8 个字符，并同时包含字母和数字。</small>
+        </div>
+        <div class="form-group">
+          <label for="confirm_password">再次输入密码</label>
+          <input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password" minlength="8" required>
+        </div>
+        <button type="submit" class="auth-submit">创建并登录</button>
+      </form>
+
+      <p class="auth-switch">已有账号？<a href="/login">返回登录</a></p>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>

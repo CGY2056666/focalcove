@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% from "_decor_icons.html" import decor_icon %}
+{% block title %}我的小窝 - 专注小窝{% endblock %}
+
+{% block content %}
+{% set furniture = namespace(count=0) %}
+{% for item in den_items %}
+  {% if item.scene_group == 'decoration' and item.id in user_data.unlocked_items %}
+    {% set furniture.count = furniture.count + 1 %}
+  {% endif %}
+{% endfor %}
+
+<section class="panel den-shell">
+  <div class="panel-head">
+    <div>
+      <span class="section-label">我的小窝</span>
+      <h1>布置我的专注小窝</h1>
+      <p>把拥有的装扮放进固定位置，空间会一直保持整齐。</p>
+    </div>
+    <div class="panel-pulse">
+      <span>当前积分</span>
+      <strong>{{ user_data.total_points }} 分</strong>
+      <small>{{ furniture.count }} 件家具 · 2 种基础样式</small>
+    </div>
+  </div>
+
+  <div class="den-toolbar" aria-label="小窝氛围">
+    <span>房间光线</span>
+    <div class="den-ambience-switch" role="group" aria-label="选择房间光线">
+      <button type="button" data-ambience="day" aria-pressed="false">日间</button>
+      <button type="button" data-ambience="night" aria-pressed="false">夜间</button>
+    </div>
+  </div>
+
+  <div id="denPreview" class="den-preview{% if furniture.count == 0 %} is-empty{% endif %}" aria-label="当前小窝装扮预览">
+    <div id="denWall" class="den-wall"></div>
+    <div id="denFloor" class="den-floor"></div>
+    <span class="den-rug" aria-hidden="true"></span>
+    {% for item in den_items %}
+      {% if item.scene_group == 'decoration' %}
+      <span
+        class="den-room-item"
+        data-item="{{ item.id }}"
+        data-scene-slot="{{ item.scene_slot }}"
+        aria-hidden="true"
+      >{{ decor_icon(item.id) }}</span>
+      {% endif %}
+    {% endfor %}
+    <div class="den-empty-scene">
+      <strong>这里还缺第一件家具</strong>
+      <span>先去商店挑一件喜欢的装扮吧。</span>
+      <a href="/shop" class="button button-secondary">去装扮商店</a>
+    </div>
+  </div>
+  <p id="denSaveStatus" class="den-save-note" role="status" aria-live="polite" data-state="idle">
+    <span class="den-save-icon" aria-hidden="true">●</span>
+    <span data-save-text>更换后自动保存</span>
+  </p>
+
+  <div class="den-items-heading">
+    <h2>我的装扮</h2>
+    <span>{{ furniture.count }} 件家具可摆放</span>
+  </div>
+
+  <div class="den-items-grid" aria-label="已拥有装扮">
+    {% for item in den_items %}
+      {% if item.id in user_data.unlocked_items %}
+      <button
+        class="den-item-card"
+        type="button"
+        data-item-id="{{ item.id }}"
+        data-scene-group="{{ item.scene_group }}"
+        data-thumbnail-scale="{{ item.thumbnail_scale }}"
+        aria-pressed="false"
+      >
+        <span class="den-item-icon" aria-hidden="true">
+          {{ decor_icon(item.id, 'decor-thumbnail') }}
+        </span>
+        <strong>{{ item.name }}</strong>
+        <small data-selection-label>
+          {% if item.scene_group == 'floor' %}地板样式
+          {% elif item.scene_group == 'wall' %}墙面样式
+          {% else %}点击摆放
+          {% endif %}
+        </small>
+      </button>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <div class="hero-actions den-actions">
+    <a href="/shop" class="button button-primary">去装扮商店</a>
+    <a href="/" class="button button-secondary">开始一轮专注</a>
+  </div>
+</section>
+
+<section class="panel secondary-panel den-shell">
+  <div class="panel-head">
+    <div>
+      <span class="section-label">摆放说明</span>
+      <h2>选中即可放入小窝</h2>
+    </div>
+  </div>
+  <div class="shop-note">
+    <div><strong>地板和墙面</strong><p>同类一次使用一件，选择另一款即可替换。</p></div>
+    <div><strong>家具和摆件</strong><p>每件都有固定位置，放满也不会互相盖住。</p></div>
+    <div><strong>日间和夜间</strong><p>切换房间光线后也会一起保存。</p></div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+  window.initialDenConfig = {{ user_data.current_den | default({}) | tojson }};
+  window.denCatalog = {{ den_items | tojson }};
+  window.denOwnedItems = {{ user_data.unlocked_items | default([]) | tojson }};
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const catalog = Array.isArray(window.denCatalog) ? window.denCatalog : [];
+    const owned = new Set(Array.isArray(window.denOwnedItems) ? window.denOwnedItems : []);
+    const byId = new Map(catalog.map(item => [item.id, item]));
+    const decorationIds = catalog
+      .filter(item => item.scene_group === 'decoration')
+      .map(item => item.id);
+    const raw = window.initialDenConfig && typeof window.initialDenConfig === 'object'
+      ? window.initialDenConfig
+      : {};
+    let config = {
+      floor: byId.get(raw.floor)?.scene_group === 'floor' && owned.has(raw.floor) ? raw.floor : 'base_floor',
+      wall: byId.get(raw.wall)?.scene_group === 'wall' && owned.has(raw.wall) ? raw.wall : 'base_wall',
+      decoration: Array.isArray(raw.decoration)
+        ? decorationIds.filter(itemId => raw.decoration.includes(itemId) && owned.has(itemId))
+        : [],
+      ambience: raw.ambience === 'night' ? 'night' : 'day',
+    };
+
+    const preview = document.getElementById('denPreview');
+    const buttons = Array.from(document.querySelectorAll('.den-item-card'));
+    const ambienceButtons = Array.from(document.querySelectorAll('[data-ambience]'));
+    const allControls = [...buttons, ...ambienceButtons];
+    const saveStatus = document.getElementById('denSaveStatus');
+    const saveText = saveStatus.querySelector('[data-save-text]');
+    let saving = false;
+
+    buttons.forEach(button => {
+      const scale = Number(button.dataset.thumbnailScale);
+      if (Number.isFinite(scale)) button.style.setProperty('--thumbnail-scale', String(scale));
+    });
+
+    const setSaveStatus = (state, text) => {
+      saveStatus.dataset.state = state;
+      saveText.textContent = text;
+    };
+
+    const renderDen = () => {
+      document.getElementById('denFloor').classList.toggle('wood-floor', config.floor === 'wood_floor');
+      document.getElementById('denWall').classList.toggle('star-wall', config.wall === 'star_wall');
+      preview.classList.toggle('ambience-night', config.ambience === 'night');
+      document.querySelectorAll('.den-room-item').forEach(item => {
+        item.classList.toggle('active', config.decoration.includes(item.dataset.item));
+      });
+      buttons.forEach(button => {
+        const itemId = button.dataset.itemId;
+        const selected = itemId === config.floor || itemId === config.wall || config.decoration.includes(itemId);
+        button.setAttribute('aria-pressed', String(selected));
+        const label = button.querySelector('[data-selection-label]');
+        if (button.dataset.sceneGroup === 'decoration') {
+          label.textContent = selected ? '已摆放 · 点击收起' : '点击摆放';
+        } else {
+          label.textContent = selected ? '正在使用' : button.dataset.sceneGroup === 'floor' ? '切换地板' : '切换墙面';
+        }
+      });
+      ambienceButtons.forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.ambience === config.ambience));
+      });
+      const placedCount = config.decoration.length;
+      preview.setAttribute('aria-label', `${config.ambience === 'night' ? '夜间' : '日间'}小窝，已摆放 ${placedCount} 件家具`);
+    };
+
+    const updateItem = itemId => {
+      const item = byId.get(itemId);
+      if (!item || !owned.has(itemId)) return;
+      if (item.scene_group === 'floor') {
+        config.floor = itemId;
+      } else if (item.scene_group === 'wall') {
+        config.wall = itemId;
+      } else if (item.scene_group === 'decoration') {
+        config.decoration = config.decoration.includes(itemId)
+          ? config.decoration.filter(id => id !== itemId)
+          : [...config.decoration, itemId];
+      }
+    };
+
+    const saveConfig = async previous => {
+      saving = true;
+      allControls.forEach(control => { control.disabled = true; });
+      setSaveStatus('saving', '正在保存…');
+      try {
+        const response = await fetch('/api/den/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ den_config: config }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.den_config) throw new Error('save_failed');
+        config = data.den_config;
+        renderDen();
+        setSaveStatus('saved', '已保存');
+      } catch (error) {
+        config = previous;
+        renderDen();
+        setSaveStatus('error', '保存失败，已恢复原搭配');
+        window.setMessage('error', '小窝暂时没有保存，请稍后再试。');
+      } finally {
+        saving = false;
+        allControls.forEach(control => { control.disabled = false; });
+      }
+    };
+
+    buttons.forEach(button => {
+      button.addEventListener('click', () => {
+        if (saving) return;
+        const previous = structuredClone(config);
+        updateItem(button.dataset.itemId);
+        renderDen();
+        saveConfig(previous);
+      });
+    });
+
+    ambienceButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        if (saving || button.dataset.ambience === config.ambience) return;
+        const previous = structuredClone(config);
+        config.ambience = button.dataset.ambience;
+        renderDen();
+        saveConfig(previous);
+      });
+    });
+
+    renderDen();
+  });
+</script>
+{% endblock %}

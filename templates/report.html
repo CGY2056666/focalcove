@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}本轮记录 - 专注小窝{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='insights-pages.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="insights-page report-page" aria-labelledby="reportTitle">
+  <header class="insights-hero report-hero{% if report_view.has_report and not report_view.reliable %} is-low-confidence{% endif %}">
+    <div>
+      <span class="insights-eyebrow">本轮记录</span>
+      <h1 id="reportTitle">{{ report_view.title }}</h1>
+      <p>{{ report_view.subtitle }}</p>
+    </div>
+    {% if report_view.has_report %}
+    <div class="report-quality{% if report_view.reliable %} is-reliable{% else %} is-low-confidence{% endif %}">
+      <span aria-hidden="true">{% if report_view.reliable %}✓{% else %}!{% endif %}</span>
+      {% if report_view.legacy_score %}旧版记录{% elif report_view.reliable %}数据较完整{% else %}仅供参考{% endif %}
+    </div>
+    {% endif %}
+  </header>
+
+  {% if not report_view.has_report %}
+  <div class="insights-empty-state">
+    <span class="empty-state-mark" aria-hidden="true"></span>
+    <h2>先完成一轮专注</h2>
+    <p>完成后，实际时长、画面相关度、提醒次数等信息会出现在这里。</p>
+    <a class="button button-primary" href="/">开始专注</a>
+  </div>
+  {% else %}
+  <article class="report-goal-card">
+    <div>
+      <span>本轮目标</span>
+      <h2>{{ report_view.goal }}</h2>
+      <p>{{ report_view.goal_type }} · {{ report_view.end_time | datetimeformat }}</p>
+    </div>
+  </article>
+
+  <section aria-labelledby="reportSummaryTitle">
+    <h2 id="reportSummaryTitle" class="section-heading">本轮概览</h2>
+    <div class="report-metrics report-primary-metrics" aria-label="本轮关键指标">
+      <article class="insight-metric">
+        <span>实际 / 计划时长</span>
+        <strong>{{ report_view.actual_plan_value }}</strong>
+        <small>分钟</small>
+      </article>
+      <article class="insight-metric">
+        <span>完成率</span>
+        <strong>{{ report_view.completion_rate | round | int }}%</strong>
+        <small>{% if report_view.completed %}已达到计划时长{% else %}本轮提前结束{% endif %}</small>
+      </article>
+      <article class="insight-metric{% if not report_view.score_displayable %} is-unavailable{% endif %}">
+        <span>{% if report_view.legacy_score %}旧版原始分{% else %}画面任务相关度{% endif %}</span>
+        <strong>{% if report_view.score_displayable %}{{ report_view.relevance_score | round | int }}{% else %}--{% endif %}</strong>
+        <small>{% if report_view.legacy_score and report_view.score_available %}旧版结果，仅供回看{% elif report_view.reliable %}按可评分时间加权，满分 100{% elif report_view.reference_score_visible %}参考分，当前证据较少{% else %}本轮没有可用评分{% endif %}</small>
+      </article>
+      <article class="insight-metric report-points-metric">
+        <span>本轮积分</span>
+        <strong>+{{ report_view.earned_points }}</strong>
+        <small>{% if report_view.earned_points %}已计入当前账号{% else %}本轮没有新增积分{% endif %}</small>
+      </article>
+    </div>
+  </section>
+
+  <section class="report-state-section" aria-labelledby="reportStateTitle">
+    <div class="section-heading-row">
+      <div>
+        <span class="insights-eyebrow">按画面状态估算</span>
+        <h2 id="reportStateTitle" class="section-heading">这一轮的画面分布</h2>
+      </div>
+      <small>
+        {% if report_view.capture_interval_recorded %}
+        按本轮 {{ report_view.capture_interval_seconds | round | int }} 秒采集节奏估算
+        {% else %}
+        按本轮采集节奏估算
+        {% endif %}
+      </small>
+    </div>
+    <div class="report-state-grid">
+      <article class="report-state-card is-focused">
+        <span class="state-dot" aria-hidden="true"></span>
+        <div><span>画面相关</span><strong>{{ report_view.focus_duration_label }}</strong></div>
+      </article>
+      <article class="report-state-card is-uncertain">
+        <span class="state-dot" aria-hidden="true"></span>
+        <div><span>无法判断</span><strong>{{ report_view.uncertain_duration_label }}</strong></div>
+      </article>
+      <article class="report-state-card is-distracted">
+        <span class="state-dot" aria-hidden="true"></span>
+        <div><span>可能偏离</span><strong>{{ report_view.distract_duration_label }}</strong></div>
+      </article>
+      <article class="report-state-card is-unscorable">
+        <span class="state-dot" aria-hidden="true"></span>
+        <div><span>本次没有结果</span><strong>{{ report_view.unscorable_duration_label }}</strong></div>
+      </article>
+    </div>
+  </section>
+
+  <details class="report-diagnostics">
+    <summary>
+      <span>数据完整性详情</span>
+      <small>查看覆盖情况、判断依据和四项分值</small>
+    </summary>
+    <div class="report-diagnostics-body">
+      <div class="report-diagnostic-grid" aria-label="数据完整性指标">
+        <article class="diagnostic-stat">
+          <span>可用分析覆盖</span>
+          <strong>{{ report_view.coverage_percent | round | int }}%</strong>
+          <small>达到 70% 表示采集数据较完整</small>
+        </article>
+        <article class="diagnostic-stat">
+          <span>明确判断占比</span>
+          <strong>{{ report_view.decisive_evidence_percent | round | int }}%</strong>
+          <small>相关或偏离画面所占时间</small>
+        </article>
+        <article class="diagnostic-stat">
+          <span>有效判断画面</span>
+          <strong>{{ report_view.fresh_decisive_frames }}</strong>
+          <small>不包含静止画面的结果复用</small>
+        </article>
+        <article class="diagnostic-stat">
+          <span>提醒 / 偏离画面</span>
+          <strong>{{ report_view.alert_count }} / {{ report_view.distract_count }}</strong>
+          <small>实际提醒次数 / 判断次数</small>
+        </article>
+      </div>
+
+      {% if not report_view.legacy_score %}
+      <div class="report-dimension-grid" aria-label="四项评分明细">
+        <article><span>目标内容相关度</span><strong>{% if report_view.avg_goal_relevance_score is not none %}{{ report_view.avg_goal_relevance_score | round | int }}{% else %}--{% endif %}</strong></article>
+        <article><span>实际任务证据</span><strong>{% if report_view.avg_task_evidence_score is not none %}{{ report_view.avg_task_evidence_score | round | int }}{% else %}--{% endif %}</strong></article>
+        <article><span>场景适配度</span><strong>{% if report_view.avg_context_fit_score is not none %}{{ report_view.avg_context_fit_score | round | int }}{% else %}--{% endif %}</strong></article>
+        <article><span>分心风险</span><strong>{% if report_view.avg_distraction_risk_score is not none %}{{ report_view.avg_distraction_risk_score | round | int }}{% else %}--{% endif %}</strong></article>
+      </div>
+      {% endif %}
+
+      <article class="report-explanation{% if not report_view.reliable %} is-low-confidence{% endif %}">
+        <div class="report-explanation-mark" aria-hidden="true">{% if report_view.reliable %}i{% else %}!{% endif %}</div>
+        <div>
+          <h2>{% if report_view.legacy_score %}旧版记录说明{% elif report_view.reliable %}这份记录怎么看{% else %}为什么本轮只供参考{% endif %}</h2>
+          {% if report_view.legacy_score %}
+          <p>这条记录来自旧版评分规则，只保留原始分数和时长供回看，不参与新版趋势、积分重算或推荐时长基线。</p>
+          {% elif report_view.reliable %}
+            {% if report_view.distract_count > 0 %}
+            <p>模型在 {{ report_view.distract_count }} 张截图中判断画面可能偏离目标。它只能观察共享画面，不能判断你的真实注意力状态。</p>
+            {% else %}
+            <p>在本轮可用截图中，模型没有判断出明显偏离目标的画面。它只能观察共享画面，不能判断你的真实注意力状态。</p>
+            {% endif %}
+          {% elif not report_view.coverage_reliable %}
+          <p>本轮计划观测 {{ report_view.expected_observations }} 次，实际采集 {{ report_view.captured_frames }} 张，其中 {{ report_view.valid_frames }} 张得到可用结果；数据覆盖不足 70%，相关度和估算时长不进入历史统计。</p>
+          {% elif not report_view.score_available %}
+          <p>本轮计划观测 {{ report_view.expected_observations }} 次，实际采集 {{ report_view.captured_frames }} 张，其中 {{ report_view.valid_frames }} 张得到可用结果；但记录中没有总体画面相关度，因此不展示分数，也不进入历史统计。</p>
+          {% else %}
+          <p>本轮有 {{ report_view.fresh_decisive_frames }} 张有效判断画面，明确判断占可评分时间的 {{ report_view.decisive_evidence_percent | round | int }}%。当前证据没有同时达到 3 张和 50%，分数仅作参考，不发放积分，也不更新推荐时长。</p>
+          {% endif %}
+        </div>
+      </article>
+    </div>
+  </details>
+
+  <div class="report-actions">
+    <a href="/" class="button button-primary">开始下一轮</a>
+    <a href="/analysis" class="button button-secondary">查看专注记录</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

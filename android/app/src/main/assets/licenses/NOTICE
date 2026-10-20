@@ -1,0 +1,36 @@
+FocalCove (专注小窝)
+Copyright 2026 FocalCove Team
+
+This product includes software and visual assets developed by the
+FocalCove Team.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+Covered team-owned visual assets include:
+
+- The three focus scene images under static/images/focus-scenes/ and their
+  Android copies under android/app/src/main/res/drawable-nodpi/.
+- The brand mark, launcher icons, and den furniture vector artwork.
+
+These assets are released under the Apache License, Version 2.0. The team
+confirms that it holds the rights needed to distribute them under that
+license.
+
+Trademarks. The Apache License, Version 2.0 does not grant permission to use
+the trade names, trademarks, service marks, or product names of the copyright
+holder, except as required for reasonable and customary use in describing the
+origin of the work. Modified versions and forks must not imply endorsement by
+the FocalCove Team.
+
+Third-party components and their licenses are listed in
+THIRD_PARTY_NOTICES.md. Their own license texts govern those components.

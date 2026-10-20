@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgl1 libglib2.0-0
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Verify dependency consistency
+        run: pip check
+      - name: Run tests without provider credentials
+        env:
+          SILICONFLOW_API_KEY: ""
+          DASHSCOPE_API_KEY: ""
+          BAILIAN_API_KEY: ""
+        run: python -m pytest -q
+
+  android:
+    name: Android unit tests and lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK packages
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Run unit tests, assemble, and lint
+        run: ./gradlew --no-daemon -PFOCUS_API_BASE_URL=https://example.invalid/ testDebugUnitTest assembleDebug lintDebug
+
+  docker:
+    name: Docker build and health check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t focalcove:ci .
+      - name: Import check
+        run: docker run --rm --entrypoint python focalcove:ci -c "import app, focus_engine; print('ok')"
+      - name: Start container and check health
+        run: |
+          docker run -d --name focalcove-ci -p 8080:8000 \
+            -e FOCUS_APP_SECRET=ci-only-placeholder-secret-0123456789abcdef \
+            focalcove:ci
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs focalcove-ci
+          exit 1
+      - name: Stop container
+        if: always()
+        run: docker rm -f focalcove-ci || true

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">专注小窝</title>
+  <desc id="desc">屋顶与时钟组成的专注小窝标志</desc>
+  <path fill="#A84F2C" d="M7.4 28.6 29 10.4a4.7 4.7 0 0 1 6 0l21.6 18.2a3 3 0 0 1-3.8 4.6L32 15.8 11.2 33.2a3 3 0 1 1-3.8-4.6Z"/>
+  <path fill="#FFF9F3" stroke="#A84F2C" stroke-width="4" stroke-linejoin="round" d="M14 29.5 32 14.4l18 15.1V53a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V29.5Z"/>
+  <circle cx="32" cy="38" r="11" fill="#F3E2D4" stroke="#873A22" stroke-width="3"/>
+  <path fill="none" stroke="#873A22" stroke-width="3" stroke-linecap="round" d="M32 31.5V38l4.6 3"/>
+  <circle cx="32" cy="38" r="1.8" fill="#873A22"/>
+</svg>

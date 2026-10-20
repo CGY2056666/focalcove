@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}专注中 - 专注小窝{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='core-pages.css') }}">
+{% endblock %}
+
+{% block content %}
+<div id="focusAlert" class="focus-alert hidden" role="alert" aria-live="assertive">
+  <span class="focus-alert-icon" aria-hidden="true">!</span>
+  <div>
+    <strong>把注意力带回来</strong>
+    <p id="focusAlertText">共享画面可能偏离了当前目标。</p>
+  </div>
+  <button type="button" class="focus-alert-close" aria-label="关闭提醒">×</button>
+</div>
+
+<section class="focus-session-shell" aria-labelledby="focusPageTitle">
+  <div id="focusLiveAnnouncement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <header class="focus-session-hero">
+    <div class="focus-goal-block">
+      <span class="section-label">当前目标</span>
+      <h1 id="focusPageTitle" class="focus-goal-title"><span id="sessionGoal">正在读取目标…</span></h1>
+      <button id="goalToggleButton" class="focus-goal-toggle hidden" type="button" aria-expanded="false" aria-controls="focusPageTitle">展开目标</button>
+      <p>评分只反映画面与目标的相关程度，仅供参考。</p>
+    </div>
+
+    <div class="focus-timer" aria-label="专注倒计时">
+      <span>剩余时间</span>
+      <strong id="remainingTime">--:--</strong>
+      <small>已进行 <span id="elapsedTime">00:00</span></small>
+    </div>
+
+    <div id="latestStatusPanel" class="focus-current-status state-waiting">
+      <div>
+        <span>画面状态</span>
+        <strong class="focus-status-label"><span id="latestStatusIcon" aria-hidden="true">·</span><span id="latestStatusLabel">等待截图</span></strong>
+      </div>
+      <div aria-label="最新画面任务相关度">
+        <span>画面相关度</span>
+        <strong class="score-badge muted" id="latestScore">--</strong>
+      </div>
+      <div id="captureState" class="capture-state waiting">等待采集</div>
+    </div>
+
+    <div id="sessionProgress" class="focus-progress-block" role="progressbar" aria-label="本轮专注进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div class="focus-progress-copy">
+        <span>本轮进度</span>
+        <strong id="progressPercent">0%</strong>
+      </div>
+      <div class="progress-track" aria-hidden="true">
+        <span id="sessionProgressBar"></span>
+      </div>
+    </div>
+  </header>
+
+  <div id="permissionAlert" class="permission-alert" aria-labelledby="permissionAlertTitle">
+    <div class="permission-alert-copy">
+      <p id="permissionAlertTitle" class="permission-alert-title">先选择要共享的范围</p>
+      <p id="permissionFeedback" class="permission-feedback" role="status" aria-live="polite">选择一个标签页、窗口或屏幕后，系统才会开始定时截图。等待选择期间仍会计时。</p>
+    </div>
+    <div class="permission-alert-actions">
+      <button id="screenShareButton" type="button" class="button-primary">选择共享范围</button>
+      <button id="exitFocusButton" type="button" class="button-secondary">放弃本轮并返回</button>
+    </div>
+  </div>
+
+  <details class="focus-analysis-details">
+    <summary>
+      <span>为什么这样判断</span>
+      <small>查看辅助数据、四项评分、截图和提醒</small>
+    </summary>
+
+    <div class="focus-quiet-stats" aria-label="本轮辅助数据">
+      <div><span>已采集</span><strong><span id="capturedCount">0</span> 张</strong></div>
+      <div><span>可能偏离</span><strong><span id="distractCount">0</span> 帧</strong></div>
+      <div><span>提醒</span><strong><span id="alertCount">0</span> 次</strong></div>
+    </div>
+
+    <div class="focus-detail-grid">
+      <section class="focus-detail-card" aria-labelledby="latestAnalysisTitle">
+        <div class="focus-detail-heading">
+          <h2 id="latestAnalysisTitle">最近一次分析</h2>
+          <span class="stage-label" id="latestScoreVersion">等待评分</span>
+        </div>
+        <dl class="focus-analysis-meta">
+          <div><dt>类别与置信度</dt><dd id="latestContext">--</dd></div>
+          <div><dt>处理耗时</dt><dd id="latestProcessing">--</dd></div>
+          <div><dt>目标内容相关度</dt><dd id="latestGoalRelevance">--</dd></div>
+          <div><dt>实际任务证据</dt><dd id="latestTaskEvidence">--</dd></div>
+          <div><dt>场景适配度</dt><dd id="latestContextFit">--</dd></div>
+          <div><dt>分心主导程度</dt><dd id="latestDistractionLevel">--</dd></div>
+        </dl>
+        <p class="detail-reason" id="latestReason">完成第一次分析后，这里会显示简短说明。</p>
+      </section>
+
+      <section class="focus-detail-card preview-surface" aria-labelledby="previewTitle">
+        <div class="focus-detail-heading">
+          <h2 id="previewTitle">最新截图</h2>
+          <span class="stage-label" id="previewLabel">尚未采集</span>
+        </div>
+        <div class="preview-frame">
+          <img id="capturePreview" class="hidden" alt="最近一次用于画面相关度分析的截图预览">
+          <div id="previewPlaceholder" class="preview-placeholder">
+            <p>屏幕共享开始后，这里会显示最新截图。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="focus-detail-card focus-alert-history" aria-labelledby="alertHistoryTitle">
+        <div class="focus-detail-heading">
+          <h2 id="alertHistoryTitle">提醒记录</h2>
+        </div>
+        <div class="distraction-list" id="distractionList">
+          <p class="empty-text">暂时没有提醒记录。</p>
+        </div>
+      </section>
+    </div>
+  </details>
+
+  <div id="focusActionDock" class="focus-action-dock hidden" aria-hidden="true">
+    <label class="sound-toggle">
+      <input id="soundAlertToggle" type="checkbox" checked>
+      <span>声音提醒</span>
+    </label>
+    <button id="stopSessionButton" class="button-primary focus-stop-button" type="button">
+      结束并查看报告
+    </button>
+  </div>
+</section>
+
+<video id="captureVideo" class="capture-probe" autoplay muted playsinline></video>
+<canvas id="captureCanvas" class="capture-probe"></canvas>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+  window.currentSessionId = {{ session_id | tojson }};
+  window.focusStartTime = Date.now();
+  window.currentPoints = 0;
+  window.distractCount = 0;
+  window.lastDistractTime = 0;
+</script>
+<script src="{{ url_for('static', filename='focus.js') }}"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    if (typeof window.initFocusPage === "function") window.initFocusPage();
+  });
+</script>
+{% endblock %}
