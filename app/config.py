@@ -8,6 +8,7 @@ BASEDIR = Path(__file__).resolve().parent.parent
 
 
 class AppConfig:
+    APP_VERSION = "2.0"
     SECRET_KEY = os.environ.get("FOCUS_APP_SECRET", "focus-app-dev-secret")
     FOCUS_ENV = os.environ.get("FOCUS_ENV", "development").strip().lower()
 

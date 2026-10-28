@@ -2070,3 +2070,26 @@ img, canvas, video { max-width: 100%; }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ==========================================
+   【页脚】网页版本标识
+   ========================================== */
+.app-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 20px 4px 8px;
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.app-footer-version {
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 768px) {
+  .app-footer {
+    justify-content: center;
+    text-align: center;
+  }
+}

@@ -53,7 +53,7 @@ your own values.
    curl --fail https://your-domain.example/health
    ```
 
-   It should return only `status`, `service`, and `api_version`.
+   It should return only `status`, `service`, `api_version`, and `app_version`.
 
 5. Run the optional mobile smoke test with a dedicated test account:
 

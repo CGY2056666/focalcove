@@ -1,7 +1,9 @@
-# 专注小窝 Android 0.6.0
+# 专注小窝 Android 2.0
 
 原生 Android 客户端，包名为 `com.focuscompass.app`，支持 Android 10（API 29）及以上。
 客户端通过 HTTPS 连接自建的 Flask 服务，并使用与 Web 端相同的评分引擎。
+
+> 2.0 仅更新版本号，功能与 0.6.0 相同。
 
 ## 功能概览
 

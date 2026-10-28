@@ -86,6 +86,7 @@ def test_production_health_is_minimal_and_mobile_responses_are_not_cached(tmp_pa
             "status": "ok",
             "service": "focus-compass",
             "api_version": "v1",
+            "app_version": "2.0",
         }
         response = client.get(
             "/api/v1/bootstrap",

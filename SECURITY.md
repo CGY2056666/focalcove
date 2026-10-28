@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Security fixes are provided on a best-effort basis for the `0.6.x` line. Older
+Security fixes are provided on a best-effort basis for the `2.0.x` line. Older
 snapshots and forks are not supported.
 
 ## Reporting a vulnerability

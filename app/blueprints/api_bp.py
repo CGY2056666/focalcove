@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, current_app, jsonify, request, session
 
 from app.helpers import (
     build_duration_recommendation,
@@ -338,5 +338,6 @@ def health():
             "status": "ok",
             "service": "focus-compass",
             "api_version": "v1",
+            "app_version": current_app.config.get("APP_VERSION", "dev"),
         }
     )

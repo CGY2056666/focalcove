@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) for its own releases.
 
+## [2.0] - 2026-10-28
+
+Version bump only. Web and Android share the same 2.0 release number; no scoring,
+API, or data-format changes.
+
+### Added
+
+- Web app exposes its version as `APP_VERSION` (`app/config.py`), in the page
+  footer, on the usage manual page, and as `app_version` in `GET /health`.
+
+### Changed
+
+- Android `versionName` is now `2.0` (`versionCode 7`).
+- `GET /health` keeps `api_version: v1`; the API protocol version and the scoring
+  model version (`multidim-v1`) are independent of the app release number.
+
 ## [0.6.0] - 2026-10-20
 
 First public release. Earlier internal iterations are not part of the public

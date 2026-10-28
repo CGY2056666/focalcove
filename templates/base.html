@@ -67,6 +67,10 @@
     <div class="page-shell">
       <div id="liveMessage" class="message hidden" role="status" aria-live="polite"></div>
       {% block content %}{% endblock %}
+      <footer class="app-footer">
+        <span>专注小窝 FocalCove</span>
+        <span class="app-footer-version">网页版 v{{ config.get('APP_VERSION', 'dev') }}</span>
+      </footer>
     </div>
   </main>
 

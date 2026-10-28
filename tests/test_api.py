@@ -12,6 +12,7 @@ class TestHealthEndpoint:
         assert data["status"] == "ok"
         assert data["service"] == "focus-compass"
         assert data["api_version"] == "v1"
+        assert data["app_version"] == "2.0"
         assert "runtime" not in data
 
 

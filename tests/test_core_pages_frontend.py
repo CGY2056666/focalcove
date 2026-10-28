@@ -115,6 +115,7 @@ def test_about_restores_complete_manual_and_marks_planned_features(auth_client):
     assert "当前按钮不可兑换" in html
     assert "手机号或邮箱验证码" in html
     assert "周报、月报和年报，PDF 导出" in html
+    assert "当前网页版本：v2.0" in html
     assert "准确度超99%" not in html
     assert "不会上传至公开服务器" not in html
 
